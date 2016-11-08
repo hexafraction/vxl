@@ -1,0 +1,5 @@
+rootProject.name = 'vxl'
+include 'vxl-core'
+include 'vxl-server'
+include 'vxl-client'
+

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/vxl.iml" filepath="$PROJECT_DIR$/.idea/modules/vxl.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/vxl-client/vxl-client.iml" filepath="$PROJECT_DIR$/.idea/modules/vxl-client/vxl-client.iml" group="vxl-client" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/vxl-client/vxl-client_main.iml" filepath="$PROJECT_DIR$/.idea/modules/vxl-client/vxl-client_main.iml" group="vxl-client" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/vxl-client/vxl-client_test.iml" filepath="$PROJECT_DIR$/.idea/modules/vxl-client/vxl-client_test.iml" group="vxl-client" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/vxl-core/vxl-core.iml" filepath="$PROJECT_DIR$/.idea/modules/vxl-core/vxl-core.iml" group="vxl-core" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/vxl-core/vxl-core_main.iml" filepath="$PROJECT_DIR$/.idea/modules/vxl-core/vxl-core_main.iml" group="vxl-core" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/vxl-core/vxl-core_test.iml" filepath="$PROJECT_DIR$/.idea/modules/vxl-core/vxl-core_test.iml" group="vxl-core" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/vxl-server/vxl-server.iml" filepath="$PROJECT_DIR$/.idea/modules/vxl-server/vxl-server.iml" group="vxl-server" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/vxl-server/vxl-server_main.iml" filepath="$PROJECT_DIR$/.idea/modules/vxl-server/vxl-server_main.iml" group="vxl-server" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/vxl-server/vxl-server_test.iml" filepath="$PROJECT_DIR$/.idea/modules/vxl-server/vxl-server_test.iml" group="vxl-server" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/vxl_main.iml" filepath="$PROJECT_DIR$/.idea/modules/vxl_main.iml" group="vxl" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/vxl_test.iml" filepath="$PROJECT_DIR$/.idea/modules/vxl_test.iml" group="vxl" />
+    </modules>
+  </component>
+</project>

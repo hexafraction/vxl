@@ -1,8 +1,12 @@
 package me.akhmetov.vxl.core;
 
+import me.akhmetov.vxl.core.security.SerializationSupport;
+
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Represents a 16x16x16 element of the game world, with its associated metadata.
@@ -11,7 +15,7 @@ public class MapChunk {
     /**
      * Used for caching and tracking whether saving is needed.
      */
-    private AtomicLong modificationCount;
+    private long modificationCount;
     /**
      * Packed representation of the areas that have been modified in this chunk.
      * This is represented using 16 nibbles, each representing modifications in each z-"slice",
@@ -22,7 +26,7 @@ public class MapChunk {
      * * 0 <= x < 8; 8 <= y < 16
      * * 8 <= x < 16; 8 <= y < 16
      */
-    private AtomicLong modificationBitfield;
+    private long modificationBitfield;
 
     /**
      * Reference to game state
@@ -32,7 +36,7 @@ public class MapChunk {
     /**
      * The actual entries in the chunk, stored unpacked.
      */
-    private int[][][] chunkData = new int[16][16][16];
+    int[][][] chunkData = new int[16][16][16];
 
     /**
      * The CHUNK position in 3D space. The range makes the world hypothetically
@@ -44,43 +48,63 @@ public class MapChunk {
      * The list of extended nodes. It becomes "sparse" during operation but becomes less "sparse" when a chunk is loaded
      * from disk.
      */
-    ArrayList<NodeMetadata> extendedNodes = new ArrayList<NodeMetadata>();
+    TreeMap<Integer, NodeMetadata> extendedNodes = new TreeMap<>();
 
     /**
      * Resolves node IDs to nodes
      */
     private NodeResolver resolver;
 
+    MapChunk() {
+    }
+
     /**
      * Sets the value of the node to the integer value.
      */
 
-    public void setNode(int xP, int yP, int zP, int node) {
+    public synchronized void setNode(int xP, int yP, int zP, int node) {
         chunkData[zP][yP][xP] = node;
-        modificationBitfield.accumulateAndGet(getModBit(xP, yP, zP), (a, b) -> a | b);
+        modificationBitfield |= getModBit(xP, yP, zP);
+        modificationCount++;
+    }
+
+    public void setNode(int xP, int yP, int zP, MapNode node) {
+        if (node instanceof MapNodeWithMetadata) {
+
+            Object mdo = (((MapNodeWithMetadata) node).storeToMetadata());
+            String decoder = (((MapNodeWithMetadata) node).getDecoderId());
+            NodeMetadata md = new NodeMetadata(game, (MapNodeWithMetadata) node, decoder, mdo);
+            synchronized (extendedNodes) {
+
+                int key = toTreeMapKey(xP, yP, zP);
+
+                extendedNodes.put(key, md);
+                setNode(xP, yP, zP, -1);
+            }
+        }
+    }
+
+    private int toTreeMapKey(int xP, int yP, int zP) {
+        return zP * 256 + yP * 16 + xP;
     }
 
     /**
      * Gets the numeric value of the node
-     *
-     * @param xP
-     * @param yP
-     * @param zP
-     * @return
      */
     public int getNodeVal(int xP, int yP, int zP) {
         return chunkData[zP][yP][xP];
     }
 
-    public MapNode getNode(int xP, int yP, int zP) {
+    public synchronized MapNode getNode(int xP, int yP, int zP) {
         int val = getNodeVal(xP, yP, zP);
-        if (val < (1 << 30)) {
+        if (val != -1) {
             // standard node
             return resolver.resolveNode(val);
-        }
-        else {
-            NodeMetadata md = extendedNodes.get(val - (1 <<30));
-            return md.getNode();
+        } else {
+            synchronized (extendedNodes) {
+                NodeMetadata md = extendedNodes.get(toTreeMapKey(xP, yP, zP));
+                return md.getNode();
+            }
         }
     }
 
@@ -102,4 +126,120 @@ public class MapChunk {
     }
 
     HashMap<String, Object> chunkMetadata = new HashMap<>();
+
+    /**
+     * Serializes to a byte array
+     */
+    public synchronized byte[] serialize() throws IOException {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            try (DataOutputStream dos = new DataOutputStream(baos)) {
+                dos.writeLong(modificationBitfield);
+                dos.writeLong(modificationCount);
+        /* * 0 <= x < 8; 0 <= y < 8
+         * * 8 <= x < 16; 0 <= y < 8
+         * * 0 <= x < 8; 8 <= y < 16
+         * * 8 <= x < 16; 8 <= y < 16 */
+                for (int z = 0; z < 16; z++) {
+                    if ((modificationBitfield & (1 << (z * 4 + 0))) != 0) {
+                        for (int y = 0; y < 8; y++) {
+                            for (int x = 0; x < 8; x++) {
+                                dos.writeInt(getNodeVal(x, y, z));
+                            }
+                        }
+                    }
+                    if ((modificationBitfield & (1 << (z * 4 + 1))) != 0) {
+                        for (int y = 0; y < 8; y++) {
+                            for (int x = 8; x < 16; x++) {
+                                dos.writeInt(getNodeVal(x, y, z));
+                            }
+                        }
+                    }
+                    if ((modificationBitfield & (1 << (z * 4 + 2))) != 0) {
+                        for (int y = 8; y < 16; y++) {
+                            for (int x = 0; x < 8; x++) {
+                                dos.writeInt(getNodeVal(x, y, z));
+                            }
+                        }
+                    }
+                    if ((modificationBitfield & (1 << (z * 4 + 3))) != 0) {
+                        for (int y = 8; y < 16; y++) {
+                            for (int x = 8; x < 16; x++) {
+                                dos.writeInt(getNodeVal(x, y, z));
+                            }
+                        }
+                    }
+                }
+                dos.writeShort(extendedNodes.size());
+                for (Map.Entry<Integer, NodeMetadata> extNode : extendedNodes.entrySet()) {
+                    dos.writeShort((short) (int) extNode.getKey());
+                    SerializationSupport.scriptSerialize(dos, extNode.getValue());
+                }
+                dos.flush();
+                return baos.toByteArray();
+            }
+        }
+    }
+
+    public synchronized void deserialize(byte[] buf) throws ChunkCorruptionException {
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(buf)) {
+            try (DataInputStream dis = new DataInputStream(bais)) {
+                modificationBitfield = dis.readLong();
+                modificationCount = dis.readLong();
+                for (int z = 0; z < 16; z++) {
+                    for (int y = 0; y < 16; y++) {
+                        for (int x = 0; x < 16; x++) {
+                            chunkData[x][y][z] = 0;
+                        }
+                    }
+                }
+                /* * 0 <= x < 8; 0 <= y < 8
+                 * * 8 <= x < 16; 0 <= y < 8
+                 * * 0 <= x < 8; 8 <= y < 16
+                 * * 8 <= x < 16; 8 <= y < 16 */
+                for (int z = 0; z < 16; z++) {
+                    if ((modificationBitfield & (1 << (z * 4 + 0))) != 0) {
+                        for (int y = 0; y < 8; y++) {
+                            for (int x = 0; x < 8; x++) {
+                                chunkData[z][y][x] = dis.readInt();
+                            }
+                        }
+                    }
+                    if ((modificationBitfield & (1 << (z * 4 + 1))) != 0) {
+                        for (int y = 0; y < 8; y++) {
+                            for (int x = 8; x < 16; x++) {
+                                chunkData[z][y][x] = dis.readInt();
+                            }
+                        }
+                    }
+                    if ((modificationBitfield & (1 << (z * 4 + 2))) != 0) {
+                        for (int y = 8; y < 16; y++) {
+                            for (int x = 0; x < 8; x++) {
+                                chunkData[z][y][x] = dis.readInt();
+                            }
+                        }
+                    }
+                    if ((modificationBitfield & (1 << (z * 4 + 3))) != 0) {
+                        for (int y = 8; y < 16; y++) {
+                            for (int x = 8; x < 16; x++) {
+                                chunkData[z][y][x] = dis.readInt();
+                            }
+                        }
+                    }
+                }
+                extendedNodes.clear();
+                int mapSz = dis.readShort();
+                for (int i = 0; i < mapSz; i++) {
+                    int key = dis.readShort();
+                    Object deserialized = SerializationSupport.scriptDeserialize(dis);
+                    if (deserialized instanceof NodeMetadata || deserialized == null) {
+                        extendedNodes.put(key, (NodeMetadata) deserialized);
+                    } else throw new ChunkCorruptionException();
+                }
+            }
+        } catch (Exception e) {
+
+            throw new ChunkCorruptionException(e);
+        }
+    }
+
 }

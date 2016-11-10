@@ -1,5 +1,7 @@
 package me.akhmetov.vxl.core.security;
 
+import me.akhmetov.vxl.core.GameState;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -31,16 +33,28 @@ public class PluginSecurityTests {
     }
 
     @Test
-    public void testFine() throws Exception {
+    public void testFineIO() throws Exception {
 
         System.getSecurityManager().checkRead("foo");
 
     }
 
     @Test(expected = SecurityException.class)
-    public void testBad() throws Exception {
+    public void testBadIO() throws Exception {
 
         vcl.loadClass("vxlplugin.IOTest").newInstance();
+
+    }
+
+    @Test
+    public void testBadSerialization() throws Exception {
+
+        try {
+            SerializationSupport.scriptSerialize(new GameState());
+        } catch(RuntimeException e){
+            Assert.assertTrue("Got the wrong RuntimeException: "+e.getMessage(), e.getMessage().startsWith("tried to deserialize forbidden class"));
+            return;
+        } Assert.fail("Expected a RuntimeException");
 
     }
 }

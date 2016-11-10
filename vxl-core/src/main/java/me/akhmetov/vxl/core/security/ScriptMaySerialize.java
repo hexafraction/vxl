@@ -4,7 +4,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Tags a class to specify that a script may serialize it.
+ * Tags a class to specify that a script may scriptSerialize it.
  */
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ScriptMaySerialize {

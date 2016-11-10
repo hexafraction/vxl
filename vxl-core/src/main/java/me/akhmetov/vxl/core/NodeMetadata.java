@@ -1,15 +1,45 @@
 package me.akhmetov.vxl.core;
 
+import me.akhmetov.vxl.core.security.ScriptMaySerialize;
+import org.nustaq.serialization.annotations.Serialize;
+import org.nustaq.serialization.annotations.Transient;
+
+import java.io.Serializable;
 import java.util.HashMap;
-
-public class NodeMetadata {
+@Transient @ScriptMaySerialize
+public final class NodeMetadata implements Serializable {
     GameState state;
-    // STOPSHIP FIXME TODO Allow overriding with a custom MapNode
-    MapNode node; // Not serialized. The script needs to reconstruct this from the rest of the metadata.
-    String metadataDecoder; // name of the metadata decoder in the metadata decoder registry
-    Object metadata; // the actual data to be decoded by the metadata decoder.
-    HashMap<String, Object> additionalData; // Any additional
 
+    MapNodeWithMetadata node; // Not serialized. The script needs to reconstruct this from the rest of the metadata.
+    @Serialize String metadataDecoder; // name of the metadata decoder in the metadata decoder registry
+    @Serialize Object metadata; // the actual data to be decoded by the metadata decoder.
+
+    public NodeMetadata(GameState state, MapNodeWithMetadata node, String metadataDecoder, Object metadata) {
+        this.state = state;
+        this.node = node;
+        this.metadataDecoder = metadataDecoder;
+        this.metadata = metadata;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        NodeMetadata that = (NodeMetadata) o;
+
+        if (metadataDecoder != null ? !metadataDecoder.equals(that.metadataDecoder) : that.metadataDecoder != null)
+            return false;
+        return metadata != null ? metadata.equals(that.metadata) : that.metadata == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = metadataDecoder != null ? metadataDecoder.hashCode() : 0;
+        result = 31 * result + (metadata != null ? metadata.hashCode() : 0);
+        return result;
+    }
 
     public MapNode getNode() {
         if(node==null){

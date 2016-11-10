@@ -5,4 +5,6 @@ package me.akhmetov.vxl.core;
  */
 public interface IGameMap {
     MapChunk getChunk(int x, int y, int z);
+    boolean isChunkGenerated(int x, int y, int z);
+    boolean isChunkCached(int x, int y, int z);
 }

@@ -1,9 +1,16 @@
 package me.akhmetov.vxl.core;
 
-public class ScriptRegistry {
+import java.util.concurrent.ConcurrentHashMap;
 
-    public static INodeMetadataDecoder getMetadataDecoder(String metadataDecoder) {
-        // TODO
-        return null;
+public class ScriptRegistry {
+    private ConcurrentHashMap<String, INodeMetadataDecoder> mdDecoders = new ConcurrentHashMap<>();
+
+    public INodeMetadataDecoder getMetadataDecoder(String id) {
+        return mdDecoders.get(id);
+    }
+
+    public void registerNodeMetadataDecoder(String id, INodeMetadataDecoder decoder) throws VxlPluginExecutionException {
+        if (mdDecoders.putIfAbsent(id, decoder) != null)
+           throw new VxlPluginExecutionException("A node metadata decoder called '" + id + "' has already been registered.");
     }
 }

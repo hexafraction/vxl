@@ -7,8 +7,12 @@ public class GameState {
     /**
      * Provides access to the map for the game state.
      */
-    IGameMap map;
+    private IGameMap map;
     private ScriptRegistry registy;
+
+    public IGameMap getMap() {
+        return map;
+    }
 
     public ScriptRegistry getRegisty() {
         return registy;

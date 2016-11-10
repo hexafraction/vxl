@@ -69,7 +69,7 @@ public class MapChunk {
      * @return
      */
     public int getNodeVal(int xP, int yP, int zP) {
-        return chunkData[xP][yP][zP];
+        return chunkData[zP][yP][xP];
     }
 
     public MapNode getNode(int xP, int yP, int zP) {

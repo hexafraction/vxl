@@ -8,8 +8,8 @@ import java.security.cert.Certificate;
 public abstract class IVxlClassProvider {
     abstract byte[] getClass(String name);
 
-    String host;
-    int port;
+    final String host;
+    final int port;
 
     public IVxlClassProvider(String host, int port) {
         this.host = host;

@@ -10,24 +10,10 @@ public class VxlSecurityPolicy extends Policy {
         appPermissions.add(new AllPermission());
     }
 
-    @Override
-    public Provider getProvider() {
-        return super.getProvider();
-    }
-
-    @Override
-    public String getType() {
-        return super.getType();
-    }
-
-    @Override
-    public Parameters getParameters() {
-        return super.getParameters();
-    }
 
     @Override
     public PermissionCollection getPermissions(CodeSource codesource) {
-        System.out.println("cs:"+codesource.toString());
+        //System.out.println("cs:"+codesource.toString());
         return new Permissions();
     }
 
@@ -38,7 +24,7 @@ public class VxlSecurityPolicy extends Policy {
     }
 
     private boolean isPlugin(ProtectionDomain pd){
-        return pd.getClassLoader() instanceof VxlClassLoader;
+        return pd.getClassLoader() instanceof VxlPluginClassLoader;
     }
 
 

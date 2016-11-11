@@ -4,9 +4,9 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Random;
 
+@SuppressWarnings("ALL")
 public class MapChunkTests {
 
     static boolean testEquals(NodeMetadata m1, NodeMetadata m2){
@@ -32,7 +32,7 @@ public class MapChunkTests {
     private void iterate(Random r, int i) throws IOException, ChunkCorruptionException {
         MapChunk c = generateChunk(r, i);
         byte[] buf = c.serialize();
-        MapChunk c2 = new MapChunk();
+        MapChunk c2 = new MapChunk(null, 0, 0, 0, null);
         c2.deserialize(buf);
         Assert.assertTrue("Chunk data does not match", customDeepEquals(c.chunkData, c2.chunkData));
         Assert.assertTrue("Extended data does not match", c.extendedNodes.equals(c2.extendedNodes));
@@ -54,7 +54,7 @@ public class MapChunkTests {
     }
 
     private MapChunk generateChunk(Random r, int i) {
-        MapChunk c = new MapChunk();
+        MapChunk c = new MapChunk(null, 0, 0, 0, null);
         for(int j = 0; j < 16; j++){
             int x = r.nextInt(1), y = r.nextInt(1), z = r.nextInt(1);
             if(r.nextFloat()>0.3) x = (x+1)%16;
@@ -64,7 +64,7 @@ public class MapChunkTests {
             if(r.nextFloat()<0.5) {
                 int rx = r.nextInt();
                 int ry = r.nextInt();
-                MapNodeWithMetadata mn = new MapNodeWithMetadata() {
+                MapNodeWithMetadata mn = new MapNodeWithMetadata("test") {
                     @Override
                     Object storeToMetadata() {
                         return Integer.toHexString(rx);

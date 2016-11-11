@@ -5,13 +5,14 @@ import org.nustaq.serialization.annotations.Serialize;
 import org.nustaq.serialization.annotations.Transient;
 
 import java.io.Serializable;
-import java.util.HashMap;
+
 @Transient @ScriptMaySerialize
 public final class NodeMetadata implements Serializable {
-    GameState state;
+    final GameState state;
 
-    MapNodeWithMetadata node; // Not serialized. The script needs to reconstruct this from the rest of the metadata.
-    @Serialize String metadataDecoder; // name of the metadata decoder in the metadata decoder registry
+    volatile MapNodeWithMetadata node; // Not serialized. The script needs to reconstruct this from the rest of the metadata.
+    @Serialize
+    final String metadataDecoder; // name of the metadata decoder in the metadata decoder registry
     @Serialize Object metadata; // the actual data to be decoded by the metadata decoder.
 
     public NodeMetadata(GameState state, MapNodeWithMetadata node, String metadataDecoder, Object metadata) {
@@ -43,10 +44,11 @@ public final class NodeMetadata implements Serializable {
 
     public MapNode getNode() {
         if(node==null){
-            synchronized(this){
-                if(node==null) node = state.getRegisty().getMetadataDecoder(metadataDecoder).decodeNode(metadata);
+            synchronized(lock){
+                if(node==null) node = state.getRegistry().getMetadataDecoder(metadataDecoder).decodeNode(metadata);
             }
         }
         return node;
     }
+    private Object lock = new Object();
 }

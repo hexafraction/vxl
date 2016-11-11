@@ -6,12 +6,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-public class SerializationSupport {
+public final class SerializationSupport {
     private static final FSTConfiguration scriptSerializer;
     static {
         scriptSerializer = FSTConfiguration.createDefaultConfiguration();
         scriptSerializer.setVerifier(ClassVerifier::verifySerialization);
     }
+
+    private SerializationSupport() {
+    }
+
     public static byte[] scriptSerialize(Object o){
         return scriptSerializer.asByteArray(o);
     }
@@ -23,6 +27,8 @@ public class SerializationSupport {
         scriptSerializer.encodeToStream(os, o);
     }
 
+    // suppressing because the serialization library throws Exception, not much else we can do
+    @SuppressWarnings("ProhibitedExceptionDeclared")
     public static Object scriptDeserialize(InputStream is) throws Exception {
         return scriptSerializer.decodeFromStream(is);
     }

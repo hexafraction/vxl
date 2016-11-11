@@ -25,8 +25,8 @@
       <module name="vxl-core_test" target="1.8" />
       <module name="vxl-server_main" target="1.8" />
       <module name="vxl-server_test" target="1.8" />
-      <module name="vxl_main" target="1.5" />
-      <module name="vxl_test" target="1.5" />
+      <module name="vxl_main" target="1.8" />
+      <module name="vxl_test" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>

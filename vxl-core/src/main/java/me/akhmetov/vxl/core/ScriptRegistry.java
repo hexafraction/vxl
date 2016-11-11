@@ -3,7 +3,7 @@ package me.akhmetov.vxl.core;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ScriptRegistry {
-    private ConcurrentHashMap<String, INodeMetadataDecoder> mdDecoders = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, INodeMetadataDecoder> mdDecoders = new ConcurrentHashMap<>();
 
     public INodeMetadataDecoder getMetadataDecoder(String id) {
         return mdDecoders.get(id);

@@ -3,7 +3,6 @@ package me.akhmetov.vxl.core;
 import me.akhmetov.vxl.core.security.SerializationSupport;
 
 import java.io.*;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -15,7 +14,7 @@ public class MapChunk {
     /**
      * Used for caching and tracking whether saving is needed.
      */
-    private long modificationCount;
+    private long modificationCount = 0;
     /**
      * Packed representation of the areas that have been modified in this chunk.
      * This is represented using 16 nibbles, each representing modifications in each z-"slice",
@@ -26,7 +25,7 @@ public class MapChunk {
      * * 0 <= x < 8; 8 <= y < 16
      * * 8 <= x < 16; 8 <= y < 16
      */
-    private long modificationBitfield;
+    private long modificationBitfield = 0;
 
     /**
      * Reference to game state
@@ -36,26 +35,31 @@ public class MapChunk {
     /**
      * The actual entries in the chunk, stored unpacked.
      */
-    int[][][] chunkData = new int[16][16][16];
+    final int[][][] chunkData = new int[16][16][16];
 
     /**
      * The CHUNK position in 3D space. The range makes the world hypothetically
      * up to 68mln km in each dimension.
      */
-    private int xid, yid, zid;
+    private final int xid, yid, zid;
 
     /**
      * The list of extended nodes. It becomes "sparse" during operation but becomes less "sparse" when a chunk is loaded
      * from disk.
      */
-    TreeMap<Integer, NodeMetadata> extendedNodes = new TreeMap<>();
+    final TreeMap<Integer, NodeMetadata> extendedNodes = new TreeMap<>();
 
     /**
      * Resolves node IDs to nodes
      */
-    private NodeResolver resolver;
+    private NodeResolutionTable resolver;
 
-    MapChunk() {
+    MapChunk(GameState game, int xid, int yid, int zid, NodeResolutionTable resolver) {
+        this.game = game;
+        this.xid = xid;
+        this.yid = yid;
+        this.zid = zid;
+        this.resolver = resolver;
     }
 
     /**
@@ -68,7 +72,7 @@ public class MapChunk {
         modificationCount++;
     }
 
-    public void setNode(int xP, int yP, int zP, MapNode node) {
+    public void setNode(int xP, int yP, int zP, MapNode node) throws VxlPluginExecutionException {
         if (node instanceof MapNodeWithMetadata) {
 
             Object mdo = (((MapNodeWithMetadata) node).storeToMetadata());
@@ -81,6 +85,10 @@ public class MapChunk {
                 extendedNodes.put(key, md);
                 setNode(xP, yP, zP, -1);
             }
+        } else {
+            if (node.getId() == 0) {
+                throw new VxlPluginExecutionException("Cannot store a node to a chunk if it hasn't been registered and received an ID");
+            }
         }
     }
 
@@ -91,7 +99,7 @@ public class MapChunk {
     /**
      * Gets the numeric value of the node
      */
-    public int getNodeVal(int xP, int yP, int zP) {
+    private int getNodeVal(int xP, int yP, int zP) {
         return chunkData[zP][yP][xP];
     }
 
@@ -230,13 +238,21 @@ public class MapChunk {
                 int mapSz = dis.readShort();
                 for (int i = 0; i < mapSz; i++) {
                     int key = dis.readShort();
-                    Object deserialized = SerializationSupport.scriptDeserialize(dis);
+                    Object deserialized;
+                    try {
+                        deserialized = SerializationSupport.scriptDeserialize(dis);
+                    } catch (Exception e) {
+                        throw new ChunkCorruptionException(e);
+                    }
                     if (deserialized instanceof NodeMetadata || deserialized == null) {
                         extendedNodes.put(key, (NodeMetadata) deserialized);
-                    } else throw new ChunkCorruptionException();
+                    } else
+                        throw new ChunkCorruptionException("Failed to deserialize the chunk; expected a NodeMetadata but instead got: " +
+                                deserialized.getClass().getName() +
+                                ":" + deserialized.toString());
                 }
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
 
             throw new ChunkCorruptionException(e);
         }

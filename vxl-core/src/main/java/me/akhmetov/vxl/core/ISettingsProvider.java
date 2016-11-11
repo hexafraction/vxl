@@ -1,6 +1,5 @@
 package me.akhmetov.vxl.core;
 
-public abstract class ISettingsProvider {
-    static ISettingsProvider provider;
+public interface ISettingsProvider {
     public abstract String getValue(String key);
 }

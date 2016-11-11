@@ -1,11 +1,12 @@
 package me.akhmetov.vxl.core.security;
 
-import java.security.CodeSource;
-import java.security.Permissions;
-import java.security.Principal;
-import java.security.ProtectionDomain;
+import java.security.*;
 
-public class VxlClassLoader extends ClassLoader {
+public class VxlPluginClassLoader extends ClassLoader {
+    static {
+        Policy.setPolicy(new VxlSecurityPolicy());
+        System.setSecurityManager(new SecurityManager());
+    }
     private final IVxlClassProvider provider;
 
     private final ProtectionDomain pd;
@@ -14,11 +15,12 @@ public class VxlClassLoader extends ClassLoader {
         ClassLoader.registerAsParallelCapable();
     }
 
-    public VxlClassLoader(IVxlClassProvider provider) {
+    public VxlPluginClassLoader(IVxlClassProvider provider) {
         this.provider = provider;
         Permissions permissions = new Permissions();
         // NO PERMISSIONS ARE ADDED BY DEFAULT
         // This *technically* leaks the instance in the constructor but the ProtectionDomain isn't allowed to leak.
+        //noinspection ThisEscapedInObjectConstruction
         this.pd = new ProtectionDomain(provider.getCodeSource(), permissions, this, null);
     }
 
@@ -26,10 +28,9 @@ public class VxlClassLoader extends ClassLoader {
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
         if(!name.startsWith("vxlplugin.")){
-            throw new ClassNotFoundException("Plugin classes must reside within a subpackage of vxkplugin.");
+            throw new ClassNotFoundException("Plugin classes must reside within a subpackage of vxlplugin.");
         }
         byte[] classDef = provider.getClass(name);
-        Class<?> clazz = defineClass(name, classDef, 0, classDef.length, pd);
-        return clazz;
+        return defineClass(name, classDef, 0, classDef.length, pd);
     }
 }

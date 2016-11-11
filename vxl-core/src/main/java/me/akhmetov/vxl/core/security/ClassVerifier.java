@@ -3,7 +3,10 @@ package me.akhmetov.vxl.core.security;
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
 
-public class ClassVerifier {
+public final class ClassVerifier {
+    private ClassVerifier() {
+    }
+
     public static <T> boolean verifySerialization(Class<T> clazz){
         if(clazz.getPackage().getName().startsWith("me.akhmetov.vxl.core.security")){
             // NOOOOOO
@@ -19,8 +22,7 @@ public class ClassVerifier {
             return true;
         }
         ScriptMaySerialize safeAnnotation = clazz.getAnnotation(ScriptMaySerialize.class);
-        if(safeAnnotation!=null) return true;
+        return safeAnnotation != null;
 
-        return false;
     }
 }

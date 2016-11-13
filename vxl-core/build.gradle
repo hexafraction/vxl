@@ -13,4 +13,5 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
     compile group: 'org.msgpack', name: 'msgpack', version: '0.6.12'
     compile group: 'de.ruedigermoeller', name: 'fst', version: '2.47'
+    compile project(":vxl-api")
 }

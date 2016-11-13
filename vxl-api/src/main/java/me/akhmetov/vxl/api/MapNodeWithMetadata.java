@@ -1,9 +1,8 @@
-package me.akhmetov.vxl.core;
+package me.akhmetov.vxl.api;
 
 public abstract class MapNodeWithMetadata extends MapNode {
     public MapNodeWithMetadata(String name) {
         super(name);
-        this.setId(-1);
     }
 
     /**
@@ -11,7 +10,7 @@ public abstract class MapNodeWithMetadata extends MapNode {
      * return the {@link MapNodeWithMetadata} instance itself, since it may not be serialized due to security restrictions.
      * @return The serializable object form of this node.
      */
-    abstract Object storeToMetadata();
+    public abstract Object storeToMetadata();
 
     public abstract String getDecoderId();
 }

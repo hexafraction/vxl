@@ -1,5 +1,7 @@
 package me.akhmetov.vxl.core;
 
+import me.akhmetov.vxl.api.MapNodeWithMetadata;
+import me.akhmetov.vxl.api.VxlPluginExecutionException;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -29,7 +31,7 @@ public class MapChunkTests {
 
     }
 
-    private void iterate(Random r, int i) throws IOException, ChunkCorruptionException {
+    private void iterate(Random r, int i) throws IOException, ChunkCorruptionException, VxlPluginExecutionException {
         MapChunk c = generateChunk(r, i);
         byte[] buf = c.serialize();
         MapChunk c2 = new MapChunk(null, 0, 0, 0, null);
@@ -53,7 +55,7 @@ public class MapChunkTests {
         return m;
     }
 
-    private MapChunk generateChunk(Random r, int i) {
+    private MapChunk generateChunk(Random r, int i) throws VxlPluginExecutionException {
         MapChunk c = new MapChunk(null, 0, 0, 0, null);
         for(int j = 0; j < 16; j++){
             int x = r.nextInt(1), y = r.nextInt(1), z = r.nextInt(1);
@@ -66,7 +68,7 @@ public class MapChunkTests {
                 int ry = r.nextInt();
                 MapNodeWithMetadata mn = new MapNodeWithMetadata("test") {
                     @Override
-                    Object storeToMetadata() {
+                    public Object storeToMetadata() {
                         return Integer.toHexString(rx);
                     }
 

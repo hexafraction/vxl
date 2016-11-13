@@ -1,4 +1,4 @@
-package me.akhmetov.vxl.core;
+package me.akhmetov.vxl.api;
 
 public interface INodeMetadataDecoder {
     MapNodeWithMetadata decodeNode(Object metadata);

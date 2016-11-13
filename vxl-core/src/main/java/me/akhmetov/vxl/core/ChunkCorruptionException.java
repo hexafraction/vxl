@@ -1,8 +1,12 @@
 package me.akhmetov.vxl.core;
 
-public class ChunkCorruptionException extends Exception {
+import me.akhmetov.vxl.core.security.SecurityUtils;
+
+class ChunkCorruptionException extends Exception {
     public ChunkCorruptionException(String message) {
         super(message);
+        SecurityUtils.checkConstructException();
+
     }
 
     public ChunkCorruptionException(String message, Throwable cause) {

@@ -3,6 +3,9 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/vxl.iml" filepath="$PROJECT_DIR$/.idea/modules/vxl.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/vxl-api/vxl-api.iml" filepath="$PROJECT_DIR$/.idea/modules/vxl-api/vxl-api.iml" group="vxl-api" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/vxl-api/vxl-api_main.iml" filepath="$PROJECT_DIR$/.idea/modules/vxl-api/vxl-api_main.iml" group="vxl-api" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/vxl-api/vxl-api_test.iml" filepath="$PROJECT_DIR$/.idea/modules/vxl-api/vxl-api_test.iml" group="vxl-api" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/vxl-client/vxl-client.iml" filepath="$PROJECT_DIR$/.idea/modules/vxl-client/vxl-client.iml" group="vxl-client" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/vxl-client/vxl-client_main.iml" filepath="$PROJECT_DIR$/.idea/modules/vxl-client/vxl-client_main.iml" group="vxl-client" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/vxl-client/vxl-client_test.iml" filepath="$PROJECT_DIR$/.idea/modules/vxl-client/vxl-client_test.iml" group="vxl-client" />

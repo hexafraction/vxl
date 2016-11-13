@@ -1,5 +1,7 @@
 package me.akhmetov.vxl.core;
 
+import me.akhmetov.vxl.api.MapNode;
+import me.akhmetov.vxl.api.MapNodeWithMetadata;
 import me.akhmetov.vxl.core.security.ScriptMaySerialize;
 import org.nustaq.serialization.annotations.Serialize;
 import org.nustaq.serialization.annotations.Transient;
@@ -7,7 +9,7 @@ import org.nustaq.serialization.annotations.Transient;
 import java.io.Serializable;
 
 @Transient @ScriptMaySerialize
-public final class NodeMetadata implements Serializable {
+final class NodeMetadata implements Serializable {
     final GameState state;
 
     volatile MapNodeWithMetadata node; // Not serialized. The script needs to reconstruct this from the rest of the metadata.
@@ -45,7 +47,7 @@ public final class NodeMetadata implements Serializable {
     public MapNode getNode() {
         if(node==null){
             synchronized(lock){
-                if(node==null) node = state.getRegistry().getMetadataDecoder(metadataDecoder).decodeNode(metadata);
+                if(node==null) node = state.getNodeAPI().getMetadataDecoder(metadataDecoder).decodeNode(metadata);
             }
         }
         return node;

@@ -1,4 +1,4 @@
-package me.akhmetov.vxl.core;
+package me.akhmetov.vxl.api;
 
 public class VxlPluginExecutionException extends Exception{
     public VxlPluginExecutionException() {

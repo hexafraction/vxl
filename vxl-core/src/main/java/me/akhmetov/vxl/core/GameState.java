@@ -1,21 +1,19 @@
 package me.akhmetov.vxl.core;
 
-import me.akhmetov.vxl.core.security.VxlPermission;
+import me.akhmetov.vxl.api.NodeAPI;
 
 /**
  * Encapsulates the entirety of the game state, as relevant to both a client and a server.
  */
-public class GameState {
+class GameState {
     /**
      * Provides access to the map for the game state.
      */
     private final IGameMap map;
-    private final ScriptRegistry registry;
-
-    public GameState(IGameMap map, ScriptRegistry registry, boolean isAuthoritative) {
-        System.getSecurityManager().checkPermission(new VxlPermission("corestate"));
+    private final NodeAPI nodeAPI;
+    public GameState(IGameMap map, NodeAPI nodeAPI, boolean isAuthoritative) {
         this.map = map;
-        this.registry = registry;
+        this.nodeAPI = nodeAPI;
         this.isAuthoritative = isAuthoritative;
     }
 
@@ -23,8 +21,8 @@ public class GameState {
         return map;
     }
 
-    public ScriptRegistry getRegistry() {
-        return registry;
+    public NodeAPI getNodeAPI() {
+        return nodeAPI;
     }
     private final boolean isAuthoritative;
 

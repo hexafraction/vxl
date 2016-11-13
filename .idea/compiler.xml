@@ -19,6 +19,8 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
+      <module name="vxl-api_main" target="1.5" />
+      <module name="vxl-api_test" target="1.5" />
       <module name="vxl-client_main" target="1.8" />
       <module name="vxl-client_test" target="1.8" />
       <module name="vxl-core_main" target="1.8" />

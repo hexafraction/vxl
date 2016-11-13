@@ -12,6 +12,7 @@
     <orderEntry type="module" module-name="vxl-core_main" />
     <orderEntry type="library" name="Gradle: org.msgpack:msgpack:0.6.12" level="project" />
     <orderEntry type="library" name="Gradle: de.ruedigermoeller:fst:2.47" level="project" />
+    <orderEntry type="module" module-name="vxl-api_main" />
     <orderEntry type="library" name="Gradle: junit:junit:4.11" level="project" />
     <orderEntry type="library" name="Gradle: com.googlecode.json-simple:json-simple:1.1.1" level="project" />
     <orderEntry type="library" name="Gradle: com.fasterxml.jackson.core:jackson-core:2.5.3" level="project" />

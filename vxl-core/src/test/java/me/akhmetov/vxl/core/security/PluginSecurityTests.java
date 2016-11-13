@@ -1,6 +1,5 @@
 package me.akhmetov.vxl.core.security;
 
-import me.akhmetov.vxl.core.GameState;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -65,7 +64,7 @@ public class PluginSecurityTests {
     public void testBadSerialization() throws Exception {
 
         try {
-            SerializationSupport.scriptSerialize(new GameState(null, null, false));
+            SerializationSupport.scriptSerialize(this);
         } catch(RuntimeException e){
             Assert.assertTrue("Got the wrong RuntimeException: "+e.getMessage(), e.getMessage().startsWith("tried to deserialize forbidden class"));
             return;

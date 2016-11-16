@@ -1,5 +1,6 @@
 package me.akhmetov.vxl.core;
 
+import com.sun.xml.internal.ws.developer.Serialization;
 import me.akhmetov.vxl.api.MapNode;
 import me.akhmetov.vxl.api.MapNodeWithMetadata;
 import me.akhmetov.vxl.api.VxlPluginExecutionException;
@@ -13,7 +14,7 @@ import java.util.TreeMap;
 /**
  * Represents a 16x16x16 element of the game world, with its associated metadata.
  */
-class MapChunk {
+class MapChunkImpl implements me.akhmetov.vxl.api.MapChunk {
     /**
      * Used for caching and tracking whether saving is needed.
      */
@@ -29,6 +30,8 @@ class MapChunk {
      * * 8 <= x < 16; 8 <= y < 16
      */
     private long modificationBitfield = 0;
+
+    private int mapGeneratorSetUsed = 0;
 
     /**
      * Reference to game state
@@ -57,7 +60,7 @@ class MapChunk {
      */
     private NodeResolutionTable resolver;
 
-    MapChunk(GameState game, int xid, int yid, int zid, NodeResolutionTable resolver) {
+    MapChunkImpl(GameState game, int xid, int yid, int zid, NodeResolutionTable resolver) {
         this.game = game;
         this.xid = xid;
         this.yid = yid;
@@ -75,6 +78,7 @@ class MapChunk {
         modificationCount++;
     }
 
+    @Override
     public void setNode(int xP, int yP, int zP, MapNode node) throws VxlPluginExecutionException {
         if (node instanceof MapNodeWithMetadata) {
 
@@ -106,7 +110,8 @@ class MapChunk {
         return chunkData[zP][yP][xP];
     }
 
-    public synchronized MapNode getNode(int xP, int yP, int zP) {
+    @Override
+    public synchronized MapNode getNode(int xP, int yP, int zP) throws VxlPluginExecutionException {
         int val = getNodeVal(xP, yP, zP);
         if (val != -1) {
             // standard node
@@ -117,6 +122,21 @@ class MapChunk {
                 return md.getNode();
             }
         }
+    }
+
+    @Override
+    public int getX() {
+        return xid;
+    }
+
+    @Override
+    public int getY() {
+        return yid;
+    }
+
+    @Override
+    public int getZ() {
+        return zid;
     }
 
     // gets the bitfield for a single node modification
@@ -136,7 +156,15 @@ class MapChunk {
         }
     }
 
-    HashMap<String, Object> chunkMetadata = new HashMap<>();
+    @Override
+    public Serializable put(String key, Serializable value) {
+        return chunkMetadata.put(key, value);
+    }
+
+    @Override
+    public Serializable get(String key) {
+        return chunkMetadata.get(key);
+    }
 
     /**
      * Serializes to a byte array
@@ -151,28 +179,28 @@ class MapChunk {
          * * 0 <= x < 8; 8 <= y < 16
          * * 8 <= x < 16; 8 <= y < 16 */
                 for (int z = 0; z < 16; z++) {
-                    if ((modificationBitfield & (1 << (z * 4 + 0))) != 0) {
+                    if ((modificationBitfield & (1L << (z * 4 + 0))) != 0) {
                         for (int y = 0; y < 8; y++) {
                             for (int x = 0; x < 8; x++) {
                                 dos.writeInt(getNodeVal(x, y, z));
                             }
                         }
                     }
-                    if ((modificationBitfield & (1 << (z * 4 + 1))) != 0) {
+                    if ((modificationBitfield & (1L << (z * 4 + 1))) != 0) {
                         for (int y = 0; y < 8; y++) {
                             for (int x = 8; x < 16; x++) {
                                 dos.writeInt(getNodeVal(x, y, z));
                             }
                         }
                     }
-                    if ((modificationBitfield & (1 << (z * 4 + 2))) != 0) {
+                    if ((modificationBitfield & (1L << (z * 4 + 2))) != 0) {
                         for (int y = 8; y < 16; y++) {
                             for (int x = 0; x < 8; x++) {
                                 dos.writeInt(getNodeVal(x, y, z));
                             }
                         }
                     }
-                    if ((modificationBitfield & (1 << (z * 4 + 3))) != 0) {
+                    if ((modificationBitfield & (1L << (z * 4 + 3))) != 0) {
                         for (int y = 8; y < 16; y++) {
                             for (int x = 8; x < 16; x++) {
                                 dos.writeInt(getNodeVal(x, y, z));
@@ -185,6 +213,7 @@ class MapChunk {
                     dos.writeShort((short) (int) extNode.getKey());
                     SerializationSupport.scriptSerialize(dos, extNode.getValue());
                 }
+                SerializationSupport.scriptSerialize(dos, chunkMetadata);
                 dos.flush();
                 return baos.toByteArray();
             }
@@ -208,28 +237,28 @@ class MapChunk {
                  * * 0 <= x < 8; 8 <= y < 16
                  * * 8 <= x < 16; 8 <= y < 16 */
                 for (int z = 0; z < 16; z++) {
-                    if ((modificationBitfield & (1 << (z * 4 + 0))) != 0) {
+                    if ((modificationBitfield & (1L << (z * 4 + 0))) != 0) {
                         for (int y = 0; y < 8; y++) {
                             for (int x = 0; x < 8; x++) {
                                 chunkData[z][y][x] = dis.readInt();
                             }
                         }
                     }
-                    if ((modificationBitfield & (1 << (z * 4 + 1))) != 0) {
+                    if ((modificationBitfield & (1L << (z * 4 + 1))) != 0) {
                         for (int y = 0; y < 8; y++) {
                             for (int x = 8; x < 16; x++) {
                                 chunkData[z][y][x] = dis.readInt();
                             }
                         }
                     }
-                    if ((modificationBitfield & (1 << (z * 4 + 2))) != 0) {
+                    if ((modificationBitfield & (1L << (z * 4 + 2))) != 0) {
                         for (int y = 8; y < 16; y++) {
                             for (int x = 0; x < 8; x++) {
                                 chunkData[z][y][x] = dis.readInt();
                             }
                         }
                     }
-                    if ((modificationBitfield & (1 << (z * 4 + 3))) != 0) {
+                    if ((modificationBitfield & (1L << (z * 4 + 3))) != 0) {
                         for (int y = 8; y < 16; y++) {
                             for (int x = 8; x < 16; x++) {
                                 chunkData[z][y][x] = dis.readInt();
@@ -244,6 +273,7 @@ class MapChunk {
                     Object deserialized;
                     try {
                         deserialized = SerializationSupport.scriptDeserialize(dis);
+
                     } catch (Exception e) {
                         throw new ChunkCorruptionException(e);
                     }
@@ -254,6 +284,17 @@ class MapChunk {
                                 deserialized.getClass().getName() +
                                 ":" + deserialized.toString());
                 }
+                try {
+
+                    Object chMeta = SerializationSupport.scriptDeserialize(dis);
+                    if (chMeta instanceof Map) {
+                        chunkMetadata = (Map<String, Serializable>) chMeta;
+                    } else {
+                        throw new ChunkCorruptionException("Failed to deserialize metadata map. Expected a map but got " + chMeta.getClass().getName());
+                    }
+                } catch (Exception e) {
+                    throw new ChunkCorruptionException(e);
+                }
             }
         } catch (IOException e) {
 
@@ -261,4 +302,17 @@ class MapChunk {
         }
     }
 
+    int getMapGeneratorSetUsed() {
+        return mapGeneratorSetUsed;
+    }
+
+    void setMapGeneratorSetUsed(int mapGeneratorSetUsed) {
+        this.mapGeneratorSetUsed = mapGeneratorSetUsed;
+    }
+
+    public long getModificationBitfield() {
+        return modificationBitfield;
+    }
+
+    private Map<String, Serializable> chunkMetadata = new HashMap<>();
 }

@@ -1,5 +1,8 @@
 package me.akhmetov.vxl.api;
 
+/**
+ * Provides support for interacting with mapnode registration, late binds, and metadata decoding.
+ */
 public interface NodeAPI {
     /**
      * Returns the metadata decoder with the specified ID.

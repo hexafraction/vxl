@@ -9,6 +9,7 @@ import me.akhmetov.vxl.api.VxlPluginExecutionException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.IllformedLocaleException;
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -33,8 +34,15 @@ class NodeResolutionTable implements Serializable {
     private final transient TreeMap<Integer, MapNode> nodesById = new TreeMap<>();
     // In lieu of HashBiMap. Only used in synchronized blocks.
     private final HashMap<String, Integer> nodeIdsByName = new HashMap<>();
-    private final TreeMap<Integer, String> nodeNamesById = new TreeMap<>();
+    private transient TreeMap<Integer, String> nodeNamesById = new TreeMap<>();
     private int maxNodePresent = 65536; // 0-65535 are reserved for hardcoded system nodes.
+
+    public void rebuildTreeMap(){
+        for(Map.Entry<String, Integer> e : nodeIdsByName.entrySet()){
+            nodeNamesById = new TreeMap<>();
+            nodeNamesById.put(e.getValue(), e.getKey());
+        }
+    }
 
     public synchronized MapNode resolveNode(int id) throws VxlPluginExecutionException {
         return nodesById.getOrDefault(id, createIdLinkedUnknownNodeOrLateBind(id));

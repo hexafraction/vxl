@@ -37,11 +37,6 @@ public class NodeAPIImpl implements me.akhmetov.vxl.api.NodeAPI {
     }
 
     @Override
-    public void setNode(int x, int y, int z, MapNode nd) {
-
-    }
-
-    @Override
     public ILateBindResolver getLateBindResolver(String pluginName) {
         return lateBindResolvers.get(pluginName);
     }

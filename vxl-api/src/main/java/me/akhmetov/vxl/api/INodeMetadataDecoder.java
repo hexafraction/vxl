@@ -1,5 +1,5 @@
 package me.akhmetov.vxl.api;
 
 public interface INodeMetadataDecoder {
-    MapNodeWithMetadata decodeNode(Object metadata);
+    MapNodeWithMetadata decodeNode(Object metadata) throws VxlPluginExecutionException;
 }

@@ -1,7 +1,7 @@
 package me.akhmetov.vxl.core;
 
-import me.akhmetov.vxl.api.BaseMapNode;
-import me.akhmetov.vxl.api.MapNode;
+import me.akhmetov.vxl.api.map.BaseMapNode;
+import me.akhmetov.vxl.api.map.MapNode;
 import me.akhmetov.vxl.api.VxlPluginExecutionException;
 import me.akhmetov.vxl.core.security.SerializationSupport;
 import org.junit.Test;

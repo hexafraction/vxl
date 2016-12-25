@@ -1,4 +1,6 @@
-package me.akhmetov.vxl.api;
+package me.akhmetov.vxl.api.map;
+
+import me.akhmetov.vxl.api.map.MapNode;
 
 /**
  * Used to resolve a node with a name starting with '!' that hasn't been registered already.

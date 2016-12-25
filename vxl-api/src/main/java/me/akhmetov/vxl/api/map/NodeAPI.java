@@ -1,4 +1,6 @@
-package me.akhmetov.vxl.api;
+package me.akhmetov.vxl.api.map;
+
+import me.akhmetov.vxl.api.VxlPluginExecutionException;
 
 /**
  * Provides support for interacting with mapnode registration, late binds, and metadata decoding.

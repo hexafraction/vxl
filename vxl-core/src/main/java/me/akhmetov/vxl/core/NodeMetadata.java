@@ -1,7 +1,7 @@
 package me.akhmetov.vxl.core;
 
-import me.akhmetov.vxl.api.MapNode;
-import me.akhmetov.vxl.api.MapNodeWithMetadata;
+import me.akhmetov.vxl.api.map.MapNode;
+import me.akhmetov.vxl.api.map.MapNodeWithMetadata;
 import me.akhmetov.vxl.api.VxlPluginExecutionException;
 import me.akhmetov.vxl.core.security.ScriptMaySerialize;
 import org.nustaq.serialization.annotations.Serialize;

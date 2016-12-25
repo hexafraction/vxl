@@ -1,4 +1,4 @@
-package me.akhmetov.vxl.api;
+package me.akhmetov.vxl.api.map;
 
 /**
  * A base implementation of a {@link MapNode} useful for basic nodes (i.e. solid nodes such as dirt, bricks, etc);

@@ -1,7 +1,5 @@
 package me.akhmetov.vxl.core;
 
-import me.akhmetov.vxl.api.MapChunk;
-
 /**
  * Provides access to the game map. Not for script use.
  */

@@ -1,14 +1,13 @@
 package me.akhmetov.vxl.core;
 
 import me.akhmetov.vxl.api.LoggingManager;
-import me.akhmetov.vxl.api.MapNode;
-import me.akhmetov.vxl.api.MapNodeWithMetadata;
+import me.akhmetov.vxl.api.map.MapNode;
+import me.akhmetov.vxl.api.map.MapNodeWithMetadata;
 import me.akhmetov.vxl.api.VxlPluginExecutionException;
 
 
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.IllformedLocaleException;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;

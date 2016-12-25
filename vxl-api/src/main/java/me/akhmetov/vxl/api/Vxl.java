@@ -1,5 +1,7 @@
 package me.akhmetov.vxl.api;
 
+import me.akhmetov.vxl.api.map.NodeAPI;
+
 /**
  * Provides access to all of the documented plugin-accessible APIs.
  */

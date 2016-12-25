@@ -1,13 +1,14 @@
 package me.akhmetov.vxl.core;
 
-import me.akhmetov.vxl.api.ILateBindResolver;
-import me.akhmetov.vxl.api.INodeMetadataDecoder;
-import me.akhmetov.vxl.api.MapNode;
+import me.akhmetov.vxl.api.map.ILateBindResolver;
+import me.akhmetov.vxl.api.map.INodeMetadataDecoder;
+import me.akhmetov.vxl.api.map.MapNode;
 import me.akhmetov.vxl.api.VxlPluginExecutionException;
+import me.akhmetov.vxl.api.map.NodeAPI;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-public class NodeAPIImpl implements me.akhmetov.vxl.api.NodeAPI {
+public class NodeAPIImpl implements NodeAPI {
     private final ConcurrentHashMap<String, INodeMetadataDecoder> mdDecoders = new ConcurrentHashMap<>();
     private final NodeResolutionTable nodeResolutionTable;
     private final ConcurrentHashMap<String, ILateBindResolver> lateBindResolvers = new ConcurrentHashMap<>();

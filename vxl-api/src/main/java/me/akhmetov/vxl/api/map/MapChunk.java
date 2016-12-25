@@ -1,4 +1,6 @@
-package me.akhmetov.vxl.api;
+package me.akhmetov.vxl.api.map;
+
+import me.akhmetov.vxl.api.VxlPluginExecutionException;
 
 import java.io.Serializable;
 

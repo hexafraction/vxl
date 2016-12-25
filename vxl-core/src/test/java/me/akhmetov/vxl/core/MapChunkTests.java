@@ -1,6 +1,6 @@
 package me.akhmetov.vxl.core;
 
-import me.akhmetov.vxl.api.MapNodeWithMetadata;
+import me.akhmetov.vxl.api.map.MapNodeWithMetadata;
 import me.akhmetov.vxl.api.VxlPluginExecutionException;
 import org.junit.Assert;
 import org.junit.Test;

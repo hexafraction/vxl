@@ -1,4 +1,4 @@
-package me.akhmetov.vxl.api;
+package me.akhmetov.vxl.api.map;
 
 /**
  * Generates the content of a map chunk. This method must perform the same actions for the same map chunk coordinates,

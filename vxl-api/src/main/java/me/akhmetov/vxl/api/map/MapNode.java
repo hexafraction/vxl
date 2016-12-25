@@ -1,4 +1,4 @@
-package me.akhmetov.vxl.api;
+package me.akhmetov.vxl.api.map;
 
 /**
  * Represents a <em>type</em> of node. For example, in a world containing only dirt, air, and stone, there would be

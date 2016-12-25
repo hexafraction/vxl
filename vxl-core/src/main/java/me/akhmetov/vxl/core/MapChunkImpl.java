@@ -1,9 +1,9 @@
 package me.akhmetov.vxl.core;
 
-import com.sun.xml.internal.ws.developer.Serialization;
-import me.akhmetov.vxl.api.MapNode;
-import me.akhmetov.vxl.api.MapNodeWithMetadata;
+import me.akhmetov.vxl.api.map.MapNode;
+import me.akhmetov.vxl.api.map.MapNodeWithMetadata;
 import me.akhmetov.vxl.api.VxlPluginExecutionException;
+import me.akhmetov.vxl.api.map.MapChunk;
 import me.akhmetov.vxl.core.security.SerializationSupport;
 
 import java.io.*;
@@ -14,7 +14,7 @@ import java.util.TreeMap;
 /**
  * Represents a 16x16x16 element of the game world, with its associated metadata.
  */
-class MapChunkImpl implements me.akhmetov.vxl.api.MapChunk {
+class MapChunkImpl implements MapChunk {
     /**
      * Used for caching and tracking whether saving is needed.
      */

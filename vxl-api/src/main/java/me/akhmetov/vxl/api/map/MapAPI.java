@@ -1,4 +1,4 @@
-package me.akhmetov.vxl.api;
+package me.akhmetov.vxl.api.map;
 
 /**
  * Provides functionality to interact with the map data and map generation functionality.

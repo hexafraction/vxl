@@ -1,6 +1,6 @@
 package me.akhmetov.vxl.core;
 
-import me.akhmetov.vxl.api.NodeAPI;
+import me.akhmetov.vxl.api.map.NodeAPI;
 
 /**
  * Encapsulates the entirety of the game state, as relevant to both a client and a server.

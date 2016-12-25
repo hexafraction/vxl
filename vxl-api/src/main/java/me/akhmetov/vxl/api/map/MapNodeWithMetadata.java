@@ -1,4 +1,4 @@
-package me.akhmetov.vxl.api;
+package me.akhmetov.vxl.api.map;
 
 public abstract class MapNodeWithMetadata extends MapNode {
     public MapNodeWithMetadata(String name) {

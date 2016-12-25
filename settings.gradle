@@ -3,4 +3,5 @@ include 'vxl-core'
 include 'vxl-server'
 include 'vxl-client'
 include 'vxl-api'
+include 'vxl-client'
 

@@ -1,11 +1,12 @@
 package me.akhmetov.vxl.core;
 
 import me.akhmetov.vxl.api.map.NodeAPI;
+import me.akhmetov.vxl.core.map.IGameMap;
 
 /**
  * Encapsulates the entirety of the game state, as relevant to both a client and a server.
  */
-class GameState {
+public class GameState {
     /**
      * Provides access to the map for the game state.
      */

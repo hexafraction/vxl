@@ -1,6 +1,7 @@
-package me.akhmetov.vxl.core;
+package me.akhmetov.vxl.core.map;
 
 import me.akhmetov.vxl.api.VxlPluginExecutionException;
+import me.akhmetov.vxl.core.VxlCoreException;
 
 import java.io.Serializable;
 import java.util.ArrayList;

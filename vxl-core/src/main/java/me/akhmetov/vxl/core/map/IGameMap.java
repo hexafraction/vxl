@@ -1,9 +1,9 @@
-package me.akhmetov.vxl.core;
+package me.akhmetov.vxl.core.map;
 
 /**
  * Provides access to the game map. Not for script use.
  */
-interface IGameMap {
+public interface IGameMap {
     MapChunkImpl getChunk(int x, int y, int z);
     boolean isChunkGenerated(int x, int y, int z);
     boolean isChunkCached(int x, int y, int z);

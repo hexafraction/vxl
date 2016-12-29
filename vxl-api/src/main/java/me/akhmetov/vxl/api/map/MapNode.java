@@ -1,5 +1,7 @@
 package me.akhmetov.vxl.api.map;
 
+import me.akhmetov.vxl.api.rendering.NodeAppearance;
+
 /**
  * Represents a <em>type</em> of node. For example, in a world containing only dirt, air, and stone, there would be
  * two instances of MapNode constructed by scripts (dirt and stone), no matter how many actual nodes of that type exist
@@ -22,14 +24,16 @@ public abstract class MapNode {
 
     // 0 is invalid, but the value will be set appropriately during loading.
     private int id = 0;
+    private NodeAppearance appearance;
 
     /**
      * Constructs a basic map node with the given name.
      *
      * @param name
      */
-    protected MapNode(String name) {
+    protected MapNode(String name, NodeAppearance appearance) {
         this.name = name;
+        this.appearance = appearance;
     }
 
 
@@ -53,5 +57,8 @@ public abstract class MapNode {
         return id;
     }
 
+    public NodeAppearance getAppearance(){
 
+        return appearance;
+    }
 }

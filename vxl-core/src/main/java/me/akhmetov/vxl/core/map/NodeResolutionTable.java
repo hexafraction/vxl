@@ -1,9 +1,11 @@
-package me.akhmetov.vxl.core;
+package me.akhmetov.vxl.core.map;
 
 import me.akhmetov.vxl.api.LoggingManager;
 import me.akhmetov.vxl.api.map.MapNode;
 import me.akhmetov.vxl.api.map.MapNodeWithMetadata;
 import me.akhmetov.vxl.api.VxlPluginExecutionException;
+import me.akhmetov.vxl.core.GameState;
+import me.akhmetov.vxl.core.SystemLogger;
 
 
 import java.io.Serializable;
@@ -13,7 +15,7 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
-class NodeResolutionTable implements Serializable {
+public class NodeResolutionTable implements Serializable {
 
     public NodeResolutionTable() {
 
@@ -126,13 +128,13 @@ class NodeResolutionTable implements Serializable {
     }
 
     public class UnknownNode extends MapNode {
-
+        // FIXME
         UnknownNode(String name) {
-            super(name);
+            super(name, null);
         }
 
         UnknownNode(int id) {
-            super("sys:unknown");
+            super("sys:unknown", null);
             setId(id);
         }
 

@@ -1,8 +1,9 @@
-package me.akhmetov.vxl.core;
+package me.akhmetov.vxl.core.map;
 
 import me.akhmetov.vxl.api.map.MapNode;
 import me.akhmetov.vxl.api.map.MapNodeWithMetadata;
 import me.akhmetov.vxl.api.VxlPluginExecutionException;
+import me.akhmetov.vxl.core.GameState;
 import me.akhmetov.vxl.core.security.ScriptMaySerialize;
 import org.nustaq.serialization.annotations.Serialize;
 import org.nustaq.serialization.annotations.Transient;
@@ -11,13 +12,14 @@ import java.io.Serializable;
 
 @Transient
 @ScriptMaySerialize
-final class NodeMetadata implements Serializable {
+public final class NodeMetadata implements Serializable {
     final GameState state;
 
     volatile MapNodeWithMetadata node; // Not serialized. The script needs to reconstruct this from the rest of the metadata.
     @Serialize
-    final String metadataDecoder; // name of the metadata decoder in the metadata decoder registry
+    public final String metadataDecoder; // name of the metadata decoder in the metadata decoder registry
     @Serialize
+    public
     Object metadata; // the actual data to be decoded by the metadata decoder.
 
     public NodeMetadata(GameState state, MapNodeWithMetadata node, String metadataDecoder, Object metadata) {
@@ -61,5 +63,5 @@ final class NodeMetadata implements Serializable {
         return node;
     }
 
-    private Object lock = new Object();
+    private final Object lock = new Object();
 }

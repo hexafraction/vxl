@@ -5,6 +5,7 @@ import me.akhmetov.vxl.api.map.INodeMetadataDecoder;
 import me.akhmetov.vxl.api.map.MapNode;
 import me.akhmetov.vxl.api.VxlPluginExecutionException;
 import me.akhmetov.vxl.api.map.NodeAPI;
+import me.akhmetov.vxl.core.map.NodeResolutionTable;
 
 import java.util.concurrent.ConcurrentHashMap;
 

@@ -10,6 +10,8 @@ public class Launcher {
         config.height = 525;
         config.backgroundFPS = 20;
         config.title = "TEST";
+        config.vSyncEnabled = false;
+        config.foregroundFPS = 0;
         config.fullscreen = false;
         new LwjglApplication(new GameMain(), config);
     }

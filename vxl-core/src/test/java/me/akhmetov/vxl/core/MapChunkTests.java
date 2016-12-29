@@ -2,6 +2,8 @@ package me.akhmetov.vxl.core;
 
 import me.akhmetov.vxl.api.map.MapNodeWithMetadata;
 import me.akhmetov.vxl.api.VxlPluginExecutionException;
+import me.akhmetov.vxl.core.map.MapChunkImpl;
+import me.akhmetov.vxl.core.map.NodeMetadata;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -86,7 +88,7 @@ public class MapChunkTests {
                         "dsfdsafjdsfjds;lfj;ldsafj;dsadaj;glkdsajlg;dsjf;ldsaj;lfds;jfslkdfj;ads" +
                         "dsafjdsfj;ldsfjldsafj;ldsfj;ldsjf;ldsjf;ldsfjldsjf;lds;lfjdsafj;ldsaf;jkds" +
                         "dsafjdsfj;ldsfj;lsdfjl;dsjf;ldsajkf;ldsjf" +
-                        "dfjdkfjlkds"+r.nextInt()) {
+                        "dfjdkfjlkds"+r.nextInt(), null) {
                     @Override
                     public Object storeToMetadata() {
                         return Integer.toHexString(rx);
@@ -177,7 +179,7 @@ public class MapChunkTests {
             if(r.nextFloat()<0.5) {
                 int rx = r.nextInt();
                 int ry = r.nextInt();
-                MapNodeWithMetadata mn = new MapNodeWithMetadata("testasdffdsafdsflkdsj;dgksadf;lkdsj;lkjlsadhjij;"+r.nextInt()) {
+                MapNodeWithMetadata mn = new MapNodeWithMetadata("testasdffdsafdsflkdsj;dgksadf;lkdsj;lkjlsadhjij;"+r.nextInt(), null) {
                     @Override
                     public Object storeToMetadata() {
                         return Integer.toHexString(rx);

@@ -3,6 +3,7 @@ package me.akhmetov.vxl.core;
 import me.akhmetov.vxl.api.map.BaseMapNode;
 import me.akhmetov.vxl.api.map.MapNode;
 import me.akhmetov.vxl.api.VxlPluginExecutionException;
+import me.akhmetov.vxl.core.map.NodeResolutionTable;
 import me.akhmetov.vxl.core.security.SerializationSupport;
 import org.junit.Test;
 
@@ -13,7 +14,7 @@ public class NodeTableTests {
 
     @Test
     public void testBasic() throws Exception {
-        MapNode nd1 = new BaseMapNode("unittests:test1");
+        MapNode nd1 = new BaseMapNode("unittests:test1", null);
         NodeResolutionTable nrt = new NodeResolutionTable(new GameState(null, null, true));
         nrt.registerMapNode(nd1);
         assertTrue(nd1.getId()>65535);
@@ -24,7 +25,7 @@ public class NodeTableTests {
 
     @Test(expected= VxlPluginExecutionException.class)
     public void testNonAuthoritative() throws Exception {
-        MapNode nd1 = new BaseMapNode("unittests:test1");
+        MapNode nd1 = new BaseMapNode("unittests:test1", null);
         NodeResolutionTable nrt = new NodeResolutionTable(new GameState(null, null, false));
         nrt.registerMapNode(nd1);
     }
@@ -58,7 +59,7 @@ public class NodeTableTests {
         NodeResolutionTable nrt = new NodeResolutionTable();
         nrt.setState(new GameState(null, null, true));
         for(int i = 0; i < 10000; i++){
-            MapNode nd = new BaseMapNode("unittests:"+Integer.toString(i));
+            MapNode nd = new BaseMapNode("unittests:"+Integer.toString(i), null);
             nrt.registerMapNode(nd);
         }
 
@@ -74,7 +75,7 @@ public class NodeTableTests {
         NodeResolutionTable nrt = new NodeResolutionTable();
         nrt.setState(new GameState(null, null, true));
         for(int i = 0; i < 10000; i++){
-            MapNode nd = new BaseMapNode("unittests:"+Integer.toString(i));
+            MapNode nd = new BaseMapNode("unittests:"+Integer.toString(i), null);
             nrt.registerMapNode(nd);
         }
 
@@ -84,8 +85,8 @@ public class NodeTableTests {
 
     @Test
     public void testSerialization() throws Exception {
-        MapNode nd1 = new BaseMapNode("unittests:test1");
-        MapNode nd2 = new BaseMapNode("unittests:test2");
+        MapNode nd1 = new BaseMapNode("unittests:test1", null);
+        MapNode nd2 = new BaseMapNode("unittests:test2", null);
         NodeResolutionTable nrt = new NodeResolutionTable();
         nrt.setState(new GameState(null, null, true));
         nrt.registerMapNode(nd1);
@@ -94,8 +95,8 @@ public class NodeTableTests {
         NodeResolutionTable nrt2 = (NodeResolutionTable) SerializationSupport.appDeserialize(buf);
         nrt2.rebuildTreeMap();
         nrt.setState(new GameState(null, null, true));
-        MapNode nd12 = new BaseMapNode("unittests:test1");
-        MapNode nd3 = new BaseMapNode("unittests:test3");
+        MapNode nd12 = new BaseMapNode("unittests:test1", null);
+        MapNode nd3 = new BaseMapNode("unittests:test3", null);
         nrt.registerMapNode(nd12);
         nrt.registerMapNode(nd3);
         assertTrue(nd1.getId()==nd12.getId());
@@ -105,8 +106,8 @@ public class NodeTableTests {
     }
     @Test
     public void testSerializationNonAuth() throws Exception {
-        MapNode nd1 = new BaseMapNode("unittests:test1");
-        MapNode nd2 = new BaseMapNode("unittests:test2");
+        MapNode nd1 = new BaseMapNode("unittests:test1", null);
+        MapNode nd2 = new BaseMapNode("unittests:test2", null);
         NodeResolutionTable nrt = new NodeResolutionTable();
         nrt.setState(new GameState(null, null, true));
         nrt.registerMapNode(nd1);
@@ -115,7 +116,7 @@ public class NodeTableTests {
         NodeResolutionTable nrt2 = (NodeResolutionTable) SerializationSupport.appDeserialize(buf);
 
         nrt.setState(new GameState(null, null, false));
-        MapNode nd12 = new BaseMapNode("unittests:test1");
+        MapNode nd12 = new BaseMapNode("unittests:test1", null);
         nrt.registerMapNode(nd12);
         assertTrue(nd1.getId()==nd12.getId());
         assertTrue(nd2.getId()!=nd1.getId());

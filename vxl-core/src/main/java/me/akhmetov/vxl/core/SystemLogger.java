@@ -6,11 +6,11 @@ import me.akhmetov.vxl.core.security.VxlPermission;
 import java.util.HashSet;
 import java.util.Set;
 
-class SystemLogger implements LoggingManager {
+public class SystemLogger implements LoggingManager {
     private final Set<LoggingManager.ILogger> loggers = new HashSet<>();
     private static volatile SystemLogger instance;
 
-    static SystemLogger getInstance() {
+    public static SystemLogger getInstance() {
         if(instance==null){
             synchronized(SystemLogger.class){
                 if(instance==null){

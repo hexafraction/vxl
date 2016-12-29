@@ -2,7 +2,7 @@ package me.akhmetov.vxl.core;
 
 import me.akhmetov.vxl.core.security.SecurityUtils;
 
-class ChunkCorruptionException extends Exception {
+public class ChunkCorruptionException extends Exception {
     public ChunkCorruptionException(String message) {
         super(message);
         SecurityUtils.checkConstructException();

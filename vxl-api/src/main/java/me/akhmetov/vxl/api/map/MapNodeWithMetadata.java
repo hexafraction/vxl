@@ -1,8 +1,10 @@
 package me.akhmetov.vxl.api.map;
 
+import me.akhmetov.vxl.api.rendering.NodeAppearance;
+
 public abstract class MapNodeWithMetadata extends MapNode {
-    public MapNodeWithMetadata(String name) {
-        super(name);
+    public MapNodeWithMetadata(String name, NodeAppearance appearance) {
+        super(name, appearance);
     }
 
     /**

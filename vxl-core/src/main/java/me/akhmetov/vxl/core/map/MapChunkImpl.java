@@ -1,9 +1,11 @@
-package me.akhmetov.vxl.core;
+package me.akhmetov.vxl.core.map;
 
 import me.akhmetov.vxl.api.map.MapNode;
 import me.akhmetov.vxl.api.map.MapNodeWithMetadata;
 import me.akhmetov.vxl.api.VxlPluginExecutionException;
 import me.akhmetov.vxl.api.map.MapChunk;
+import me.akhmetov.vxl.core.ChunkCorruptionException;
+import me.akhmetov.vxl.core.GameState;
 import me.akhmetov.vxl.core.security.SerializationSupport;
 
 import java.io.*;
@@ -14,7 +16,7 @@ import java.util.TreeMap;
 /**
  * Represents a 16x16x16 element of the game world, with its associated metadata.
  */
-class MapChunkImpl implements MapChunk {
+public class MapChunkImpl implements MapChunk {
     /**
      * Used for caching and tracking whether saving is needed.
      */
@@ -41,7 +43,7 @@ class MapChunkImpl implements MapChunk {
     /**
      * The actual entries in the chunk, stored unpacked.
      */
-    final int[][][] chunkData = new int[16][16][16];
+    public final int[][][] chunkData = new int[16][16][16];
 
     /**
      * The CHUNK position in 3D space. The range makes the world hypothetically
@@ -53,14 +55,14 @@ class MapChunkImpl implements MapChunk {
      * The list of extended nodes. It becomes "sparse" during operation but becomes less "sparse" when a chunk is loaded
      * from disk.
      */
-    final TreeMap<Integer, NodeMetadata> extendedNodes = new TreeMap<>();
+    public final TreeMap<Integer, NodeMetadata> extendedNodes = new TreeMap<>();
 
     /**
      * Resolves node IDs to nodes
      */
     private NodeResolutionTable resolver;
 
-    MapChunkImpl(GameState game, int xid, int yid, int zid, NodeResolutionTable resolver) {
+    public MapChunkImpl(GameState game, int xid, int yid, int zid, NodeResolutionTable resolver) {
         this.game = game;
         this.xid = xid;
         this.yid = yid;
@@ -310,7 +312,7 @@ class MapChunkImpl implements MapChunk {
         this.mapGeneratorSetUsed = mapGeneratorSetUsed;
     }
 
-    public long getModificationBitfield() {
+    public synchronized long getModificationBitfield() {
         return modificationBitfield;
     }
 

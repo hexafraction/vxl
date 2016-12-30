@@ -1,11 +1,11 @@
 package me.akhmetov.vxl.core.map;
 
-import me.akhmetov.vxl.api.LoggingManager;
 import me.akhmetov.vxl.api.map.MapNode;
 import me.akhmetov.vxl.api.map.MapNodeWithMetadata;
 import me.akhmetov.vxl.api.VxlPluginExecutionException;
 import me.akhmetov.vxl.core.GameState;
-import me.akhmetov.vxl.core.SystemLogger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 
 import java.io.Serializable;
@@ -18,7 +18,15 @@ import java.util.concurrent.ConcurrentSkipListMap;
 public class NodeResolutionTable implements Serializable {
 
     public NodeResolutionTable() {
+        buildHardcodedNodes();
+    }
 
+    private void buildHardcodedNodes() {
+        HardcodedNodes.AIR.setId(1);
+        nodesById.put(1, HardcodedNodes.AIR);
+        nodeNamesById.put(1, HardcodedNodes.AIR.getName());
+        nodeIdsByName.put(HardcodedNodes.AIR.getName(), 1);
+        nodesByName.put(HardcodedNodes.AIR.getName(), HardcodedNodes.AIR);
     }
 
     public void setState(GameState state) {
@@ -26,10 +34,10 @@ public class NodeResolutionTable implements Serializable {
     }
 
     public NodeResolutionTable(GameState state) {
-
+        this();
         this.state = state;
     }
-
+    private static Logger logger = LogManager.getLogger();
     private transient GameState state;
     private final transient HashMap<String, MapNode> nodesByName = new HashMap<>();
     private final transient TreeMap<Integer, MapNode> nodesById = new TreeMap<>();
@@ -81,7 +89,7 @@ public class NodeResolutionTable implements Serializable {
         UnknownNode unknownById = pendingUnknownNodes.get(nd.getId());
         if (unknownById != null) {
             unknownById.beginDelegating(nd);
-            SystemLogger.getInstance().log(LoggingManager.Severity.WARNING, "Resolved unknown node with ID "
+            logger.warn("Resolved unknown node with ID "
                     + nd.getId()
                     + " as "
                     + name
@@ -96,7 +104,7 @@ public class NodeResolutionTable implements Serializable {
 
 
     private synchronized MapNode createNameLinkedUnknownNode(String name) {
-        SystemLogger.getInstance().log(SystemLogger.Severity.WARNING, "Attempting to load an unknown node.");
+        logger.warn("Attempting to load an unknown node.");
         UnknownNode ourUnknown = new UnknownNode(name);
         pendingUnknownNodesByName.put(name, ourUnknown);
         return ourUnknown;
@@ -112,7 +120,7 @@ public class NodeResolutionTable implements Serializable {
                 return resolveLateBoundNode(name);
             }
         }
-        SystemLogger.getInstance().log(SystemLogger.Severity.WARNING, "Attempting to load an unknown node.");
+        logger.warn("Attempting to load an unknown node.");
         UnknownNode ourUnknown = new UnknownNode(id);
         // already protected by synchronized block
         pendingUnknownNodes.put(id, ourUnknown);

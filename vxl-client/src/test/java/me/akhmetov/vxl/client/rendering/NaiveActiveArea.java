@@ -6,7 +6,7 @@ import java.util.Collection;
 import java.util.HashSet;
 
 public class NaiveActiveArea implements ActiveArea {
-    HashSet<MapChunk> chunks;
+    HashSet<MapChunk> chunks = new HashSet<>();
     @Override
     public Iterable<MapChunk> getActives(){
         return chunks;

@@ -18,7 +18,9 @@ public class NodeTableTests {
         NodeResolutionTable nrt = new NodeResolutionTable(new GameState(null, null, true));
         nrt.registerMapNode(nd1);
         assertTrue(nd1.getId()>65535);
+        //noinspection ObjectEquality
         assertTrue(nrt.resolveNode(nd1.getId())==nd1);
+        //noinspection ObjectEquality
         assertTrue(nrt.resolveNode("unittests:test1")==nd1);
 
     }

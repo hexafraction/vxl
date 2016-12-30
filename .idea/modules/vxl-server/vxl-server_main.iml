@@ -13,10 +13,12 @@
     <orderEntry type="library" name="Gradle: org.msgpack:msgpack:0.6.12" level="project" />
     <orderEntry type="library" name="Gradle: de.ruedigermoeller:fst:2.47" level="project" />
     <orderEntry type="module" module-name="vxl-api_main" />
+    <orderEntry type="library" name="Gradle: org.apache.logging.log4j:log4j-core:2.7" level="project" />
     <orderEntry type="library" name="Gradle: com.googlecode.json-simple:json-simple:1.1.1" level="project" />
     <orderEntry type="library" name="Gradle: com.fasterxml.jackson.core:jackson-core:2.5.3" level="project" />
     <orderEntry type="library" name="Gradle: org.objenesis:objenesis:2.4" level="project" />
     <orderEntry type="library" name="Gradle: com.badlogicgames.gdx:gdx:1.9.2" level="project" />
+    <orderEntry type="library" name="Gradle: org.apache.logging.log4j:log4j-api:2.7" level="project" />
     <orderEntry type="library" name="Gradle: org.javassist:javassist:3.19.0-GA" level="project" />
   </component>
 </module>

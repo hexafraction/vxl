@@ -2,7 +2,7 @@ package me.akhmetov.vxl.core;
 
 import me.akhmetov.vxl.api.map.MapNodeWithMetadata;
 import me.akhmetov.vxl.api.VxlPluginExecutionException;
-import me.akhmetov.vxl.core.map.MapChunkImpl;
+import me.akhmetov.vxl.core.map.LoadedMapChunk;
 import me.akhmetov.vxl.core.map.NodeMetadata;
 import org.junit.Assert;
 import org.junit.Test;
@@ -30,7 +30,7 @@ public class MapChunkTests {
         long nanoEnd = System.nanoTime();
         System.out.println("nanos per cycle: " + (nanoEnd-nanoStart) / 100000.0);
         System.out.println("chunks per second: " + 1000000000/((nanoEnd-nanoStart) / 100000.0));
-        MapChunkImpl c = generateChunk(r, 0);
+        LoadedMapChunk c = generateChunk(r, 0);
         byte[] buf = c.serialize();
         System.out.println("size of a chunk: " + buf.length);
         System.out.println("Expected chunks per 4 GB: " + 4294967296.0 / (buf.length));
@@ -49,7 +49,7 @@ public class MapChunkTests {
         long nanoEnd = System.nanoTime();
         System.out.println("nanos per cycle (heavy): " + (nanoEnd-nanoStart) / 1000.0);
         System.out.println("chunks per second (heavy): " + 1000000000/((nanoEnd-nanoStart) / 1000.0));
-        MapChunkImpl d = generateChunkHeavy(r, 0);
+        LoadedMapChunk d = generateChunkHeavy(r, 0);
         byte[] buf2 = d.serialize();
         System.out.println("size of a heavy chunk: " + buf2.length);
         System.out.println("Expected heavy chunks per 4 GB: " + 4294967296.0 / (buf2.length));
@@ -68,15 +68,15 @@ public class MapChunkTests {
         long nanoEnd = System.nanoTime();
         System.out.println("nanos per cycle (packed): " + (nanoEnd-nanoStart) / 10000.0);
         System.out.println("chunks per second (packed): " + 1000000000/((nanoEnd-nanoStart) / 10000.0));
-        MapChunkImpl d = generateChunkHeavy(r, 0);
+        LoadedMapChunk d = generateChunkHeavy(r, 0);
         byte[] buf2 = d.serialize();
         System.out.println("size of a packed chunk: " + buf2.length);
         System.out.println("Expected packed chunks per 4 GB: " + 4294967296.0 / (buf2.length));
     }
 
 
-    private MapChunkImpl generateChunkHeavy(Random r, int i) throws VxlPluginExecutionException {
-        MapChunkImpl c = new MapChunkImpl(null, 0, 0, 0, null);
+    private LoadedMapChunk generateChunkHeavy(Random r, int i) throws VxlPluginExecutionException {
+        LoadedMapChunk c = new LoadedMapChunk(null, 0, 0, 0, null);
         for(int j = 0; j < 1024; j++){
             int x = r.nextInt(16), y = r.nextInt(16), z = r.nextInt(16);
             c.setNode(x, y, z, r.nextInt(100000));
@@ -106,9 +106,9 @@ public class MapChunkTests {
     }
 
     private void iterate(Random r, int i) throws IOException, ChunkCorruptionException, VxlPluginExecutionException {
-        MapChunkImpl c = generateChunk(r, i);
+        LoadedMapChunk c = generateChunk(r, i);
         byte[] buf = c.serialize();
-        MapChunkImpl c2 = new MapChunkImpl(null, 0, 0, 0, null);
+        LoadedMapChunk c2 = new LoadedMapChunk(null, 0, 0, 0, null);
         c2.deserialize(buf);
         Assert.assertEquals(c.getModificationBitfield(), c2.getModificationBitfield());
         //System.out.println(Long.toBinaryString(c.getModificationBitfield()));
@@ -117,9 +117,9 @@ public class MapChunkTests {
     }
 
     private void iterateHeavy(Random r, int i) throws IOException, ChunkCorruptionException, VxlPluginExecutionException {
-        MapChunkImpl c = generateChunkHeavy(r, i);
+        LoadedMapChunk c = generateChunkHeavy(r, i);
         byte[] buf = c.serialize();
-        MapChunkImpl c2 = new MapChunkImpl(null, 0, 0, 0, null);
+        LoadedMapChunk c2 = new LoadedMapChunk(null, 0, 0, 0, null);
         c2.deserialize(buf);
         Assert.assertEquals(c.getModificationBitfield(), c2.getModificationBitfield());
         //System.out.println(Long.toBinaryString(c.getModificationBitfield()));
@@ -129,9 +129,9 @@ public class MapChunkTests {
 
 
     private void iteratePacked(Random r, int i) throws IOException, ChunkCorruptionException, VxlPluginExecutionException {
-        MapChunkImpl c = generateChunkPacked(r, i);
+        LoadedMapChunk c = generateChunkPacked(r, i);
         byte[] buf = c.serialize();
-        MapChunkImpl c2 = new MapChunkImpl(null, 0, 0, 0, null);
+        LoadedMapChunk c2 = new LoadedMapChunk(null, 0, 0, 0, null);
         c2.deserialize(buf);
         Assert.assertEquals(c.getModificationBitfield(), c2.getModificationBitfield());
         //System.out.println(Long.toBinaryString(c.getModificationBitfield()));
@@ -139,8 +139,8 @@ public class MapChunkTests {
         Assert.assertTrue("Extended data does not match", c.extendedNodes.equals(c2.extendedNodes));
     }
 
-    private MapChunkImpl generateChunkPacked(Random r, int q) {
-        MapChunkImpl c = new MapChunkImpl(null, 0, 0, 0, null);
+    private LoadedMapChunk generateChunkPacked(Random r, int q) {
+        LoadedMapChunk c = new LoadedMapChunk(null, 0, 0, 0, null);
         for(int i = 0 ; i < 16; i++){
             for(int j = 0; j < 16; j++){
                 for(int k = 0; k < 16; k++){
@@ -167,8 +167,8 @@ public class MapChunkTests {
         return m;
     }
 
-    private MapChunkImpl generateChunk(Random r, int i) throws VxlPluginExecutionException {
-        MapChunkImpl c = new MapChunkImpl(null, 0, 0, 0, null);
+    private LoadedMapChunk generateChunk(Random r, int i) throws VxlPluginExecutionException {
+        LoadedMapChunk c = new LoadedMapChunk(null, 0, 0, 0, null);
 
         int x = r.nextInt(16), y = r.nextInt(16), z = r.nextInt(16);
         for(int j = 0; j < 16; j++){

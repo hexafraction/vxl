@@ -1,31 +1,116 @@
 package me.akhmetov.vxl.client.rendering;
 
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes;
+import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
+import com.badlogic.gdx.graphics.g3d.attributes.IntAttribute;
+import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.model.MeshPart;
+import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.utils.Disposable;
 import me.akhmetov.vxl.api.VxlPluginExecutionException;
 import me.akhmetov.vxl.api.map.MapChunk;
 import me.akhmetov.vxl.api.map.MapNode;
+import me.akhmetov.vxl.api.rendering.BlockNodeAppearance;
+import me.akhmetov.vxl.core.ChunkCorruptionException;
+import me.akhmetov.vxl.core.map.MapChunkDelta;
+import me.akhmetov.vxl.core.map.LoadedMapChunk;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
+import javax.xml.soap.Node;
+import java.io.IOException;
 import java.io.Serializable;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 
 public class RenderedChunk implements MapChunk {
-    private MapChunk delegate;
+    private static Logger logger = LogManager.getLogger();
+
+    private LoadedMapChunk delegate;
+    private NodeTexAtlas atl;
+    private ModelBuilder mb = new ModelBuilder();
+
+    public RenderedChunk(LoadedMapChunk delegate, NodeTexAtlas atlas) {
+        this.delegate = delegate;
+        this.atl = atlas;
+    }
+
+    public void setNode(int xP, int yP, int zP, int node) {
+        delegate.setNode(xP, yP, zP, node);
+    }
+
+    public byte[] serialize() throws IOException {
+        return delegate.serialize();
+    }
+
+    public long getModificationBitfield() {
+        return delegate.getModificationBitfield();
+    }
+
+    public MapChunkDelta pollQueue() {
+        return delegate.pollQueue();
+    }
+
+    public void deserialize(byte[] buf) throws ChunkCorruptionException {
+        delegate.deserialize(buf);
+    }
+
+    public int getQueueBacklog() {
+        return delegate.getQueueBacklog();
+    }
+
+    public void clearQueue() {
+        delegate.clearQueue();
+    }
+
+    public void handleOneQueueItem() throws VxlPluginExecutionException {
+        MapChunkDelta mcd = pollQueue();
+        if (mcd != null)
+            handleDelta(mcd, atl);
+
+        onlyPage.rebuild();
+    }
 
 
-    private class ChunkMesh implements Disposable {
+    public class ChunkMesh implements Disposable {
+        public ChunkMesh() {
+            for (int i = 0; i < 48; i++) {
+                divisions[i] = new ChunkMeshDivision();
+            }
+        }
+
+        public ModelInstance getGdxModelInstance() {
+            return gdxModelInstance;
+        }
 
         Model gdxModel;
         ModelInstance gdxModelInstance;
+
+        public void rebuild() {
+            mb.begin();
+            for (int i = 0; i < 48; i++) {
+                if (divisions[i].quadCount != 0) {
+                    divisions[i].gdxMeshPart = mb.part("cmd" + i, divisions[i].gdxMesh, GL20.GL_TRIANGLES, 0, divisions[i].quadCount * 6,
+                            new Material(new TextureAttribute(TextureAttribute.Diffuse, atl.getGdxAtlas().getTextures().first()),
+                            new IntAttribute(IntAttribute.CullFace, GL20.GL_NONE)));
+                    //System.out.println(divisions[i].quadCount);
+                }
+
+            }
+            gdxModel = mb.end();
+            gdxModelInstance = new ModelInstance(gdxModel, 0, 0, 0);
+
+        }
 
         @Override
         public void dispose() {
@@ -56,11 +141,13 @@ public class RenderedChunk implements MapChunk {
                 assert (ncb < 512);
                 short index = (short) ncb;
                 FloatBuffer fb = gdxMesh.getVerticesBuffer();
+                fb.limit(fb.capacity());
                 fb.position(index * 20);
                 fb.put(quad, 0, 20);
 
                 // we know they're CCW
                 ShortBuffer sb = gdxMesh.getIndicesBuffer();
+                sb.limit(sb.capacity());
                 sb.position(quadCount * 6); // we want to append to end
                 sb.put((short) (index * 4 + 0));
                 sb.put((short) (index * 4 + 1));
@@ -75,15 +162,22 @@ public class RenderedChunk implements MapChunk {
             }
 
 
-
             // indirect index is what addQuad returned. It points into the indices buffer (but is divided by six)
+            // returns true if remap occurred
             public void dropQuad(int indirectIndex) {
+                if (indirectIndex >= quadCount) {
+                    logger.warn("dropping something nonexistent");
+                }
                 ShortBuffer sb = gdxMesh.getIndicesBuffer();
+                sb.limit(sb.capacity());
                 int firstIndex = sb.get(indirectIndex * 6);
                 int quadId = firstIndex / 4;
-                assert (quadAllocationBitset.get(quadId));
-                assert (indirectIndex <= quadCount - 1);
+                if (!quadAllocationBitset.get(quadId)) {
+                    logger.warn("Dropping something non-existent");
+                }
+                int relocQuadId = sb.get((quadCount-1)*6)/4;
                 if (indirectIndex != quadCount - 1) {
+                    System.out.println("Actually relocating");
                     // it's not the last quad in the indices buffer. We need to relocate the last quad to the
                     // spot we just freed to keep the indices contiguous. We can leave the
                     // last value as stale (recall that the mesh part limit will keep us from rendering it, once we update
@@ -91,13 +185,13 @@ public class RenderedChunk implements MapChunk {
                     // Instead of doing a bunch of reads let's base things on the quadId. It should be consistent.
 
                     // Anyway, otherwise we just decrement the number of quads and perform other bookkeeping.
-                    sb.position(indirectIndex * 6); // we want to append to end
-                    sb.put((short) (quadId * 4 + 0));
-                    sb.put((short) (quadId * 4 + 1));
-                    sb.put((short) (quadId * 4 + 3));
-                    sb.put((short) (quadId * 4 + 1));
-                    sb.put((short) (quadId * 4 + 2));
-                    sb.put((short) (quadId * 4 + 3));
+                    sb.position(indirectIndex * 6); // we want to write to the spot we just dropped.
+                    sb.put((short) (relocQuadId * 4 + 0));
+                    sb.put((short) (relocQuadId * 4 + 1));
+                    sb.put((short) (relocQuadId * 4 + 3));
+                    sb.put((short) (relocQuadId * 4 + 1));
+                    sb.put((short) (relocQuadId * 4 + 2));
+                    sb.put((short) (relocQuadId * 4 + 3));
                 }
                 quadCount--;
                 quadAllocationBitset.clear(quadId);
@@ -134,23 +228,334 @@ public class RenderedChunk implements MapChunk {
         int[][][] posZFaces = new int[16][16][16];
         int[][][] negZFaces = new int[16][16][16];
 
+        {
+            for (int i = 0; i < 16; i++) {
+                for (int j = 0; j < 16; j++) {
+                    for (int k = 0; k < 16; k++) {
+                        posXFaces[i][j][k] = -1;
+                        posYFaces[i][j][k] = -1;
+                        posZFaces[i][j][k] = -1;
+                        negXFaces[i][j][k] = -1;
+                        negYFaces[i][j][k] = -1;
+                        negZFaces[i][j][k] = -1;
+                    }
+                }
+            }
+        }
+
+        // index is 256*6*x + 16*6*y + 6*z + k where k is 0 for posX, 1 for negX, ..., 5 fot negZ
+        private int[] indexReverseTable = new int[24576];
+
+        {
+            Arrays.fill(indexReverseTable, -1);
+        }
+
 
         /* TODO:
          * Create method for drawing a quad to the first open division
          * Provide a provision for moving quads from one division to another if combining them is useful.
-                -> Does this actually provide a performance benefit?
+                -> Does this actually provide a performance benefit? Dubious for now.
          * Provide a means of relating a node add/drop to one or more quad adds/drops.
                 -> I guess backfaces only if a transparent into air (or other non-solid)
         */
 
+
     }
 
-    // one mesh for each atlas page
-    ArrayList<ChunkMesh>[] meshesByAtlasPage;
+    // shared to avoid reallocation. The quad being drawn.
+    float[] quad = new float[20];
 
-    /* TODO:
-     * Create methods for handling chunk updates by their types. Delegate to the right atlas page mesh
-     */
+    public void handleDelta(MapChunkDelta delta, NodeTexAtlas atl) throws VxlPluginExecutionException {
+        switch (delta.getType()) {
+            case ADD:
+                if (!(delta.getAfter().getAppearance() instanceof BlockNodeAppearance)) {
+                    logger.error("Can't render an appearance of " + delta.getAfter().getAppearance().getClass().getName() + " just yet. Tell the dev.");
+                    return;
+                }
+                BlockNodeAppearance bna = (BlockNodeAppearance) delta.getAfter().getAppearance();
+
+                boolean hasPosXNeighbor = delta.getX() != 15 && onlyPage.negXFaces[delta.getX() + 1][delta.getY()][delta.getZ()] != -1/*getNode(delta.getX() + 1, delta.getY(), delta.getZ()).getAppearance() instanceof BlockNodeAppearance*/;
+                if (hasPosXNeighbor) {
+                    drop(onlyPage.negXFaces[delta.getX() + 1][delta.getY()][delta.getZ()]);
+                    onlyPage.negXFaces[delta.getX() + 1][delta.getY()][delta.getZ()] = -1;
+                } else {
+                    // add
+                    NodeTexAtlas.Tile tl = atl.getTile(bna.getPosX());
+                    quad[0] = delta.getX() + 1;
+                    quad[1] = delta.getY();
+                    quad[2] = delta.getZ();
+                    quad[3] = tl.region.getU2();
+                    quad[4] = tl.region.getV2();
+
+                    quad[5] = delta.getX() + 1;
+                    quad[6] = delta.getY() + 1;
+                    quad[7] = delta.getZ();
+                    quad[8] = tl.region.getU2();
+                    quad[9] = tl.region.getV();
+
+                    quad[10] = delta.getX() + 1;
+                    quad[11] = delta.getY() + 1;
+                    quad[12] = delta.getZ() + 1;
+                    quad[13] = tl.region.getU();
+                    quad[14] = tl.region.getV();
+
+                    quad[15] = delta.getX() + 1;
+                    quad[16] = delta.getY();
+                    quad[17] = delta.getZ() + 1;
+                    quad[18] = tl.region.getU();
+                    quad[19] = tl.region.getV2();
+                    int quadIdx = add(quad);
+                    onlyPage.posXFaces[delta.getX()][delta.getY()][delta.getZ()] = quadIdx;
+                    onlyPage.indexReverseTable[quadIdx] = delta.getX() * 256 * 6 + delta.getY() * 16 * 6 + delta.getZ() * 6 + 0;
+                }
+                boolean hasNegXNeighbor = delta.getX() != 0 && onlyPage.posXFaces[delta.getX() - 1][delta.getY()][delta.getZ()] != -1;/*getNode(delta.getX() - 1, delta.getY(), delta.getZ()).getAppearance() instanceof BlockNodeAppearance*/
+                if (hasNegXNeighbor) {
+                    drop(onlyPage.posXFaces[delta.getX() - 1][delta.getY()][delta.getZ()]);
+                    onlyPage.posXFaces[delta.getX() - 1][delta.getY()][delta.getZ()] = -1;
+                } else {
+                    // add
+                    NodeTexAtlas.Tile tl = atl.getTile(bna.getNegX());
+                    quad[0] = delta.getX();
+                    quad[1] = delta.getY();
+                    quad[2] = delta.getZ();
+                    quad[3] = tl.region.getU();
+                    quad[4] = tl.region.getV2();
+
+                    quad[5] = delta.getX();
+                    quad[6] = delta.getY();
+                    quad[7] = delta.getZ() + 1;
+                    quad[8] = tl.region.getU2();
+                    quad[9] = tl.region.getV2();
+
+                    quad[10] = delta.getX();
+                    quad[11] = delta.getY() + 1;
+                    quad[12] = delta.getZ() + 1;
+                    quad[13] = tl.region.getU2();
+                    quad[14] = tl.region.getV();
+
+                    quad[15] = delta.getX();
+                    quad[16] = delta.getY() + 1;
+                    quad[17] = delta.getZ();
+                    quad[18] = tl.region.getU();
+                    quad[19] = tl.region.getV();
+                    int quadIdx = add(quad);
+                    onlyPage.negXFaces[delta.getX()][delta.getY()][delta.getZ()] = quadIdx;
+                    onlyPage.indexReverseTable[quadIdx] = delta.getX() * 256 * 6 + delta.getY() * 16 * 6 + delta.getZ() * 6 + 1;
+
+                }
+
+                boolean hasPosYNeighbor = delta.getY() != 15 && onlyPage.negYFaces[delta.getX()][delta.getY() + 1][delta.getZ()] != -1;/*getNode(delta.getX(), delta.getY() + 1, delta.getZ()).getAppearance() instanceof BlockNodeAppearance;*/
+                if (hasPosYNeighbor) {
+                    drop(onlyPage.negYFaces[delta.getX()][delta.getY() + 1][delta.getZ()]);
+                    onlyPage.negYFaces[delta.getX()][delta.getY() + 1][delta.getZ()] = -1;
+                } else {
+                    NodeTexAtlas.Tile tl = atl.getTile(bna.getPosY());
+                    quad[0] = delta.getX();
+                    quad[1] = delta.getY() + 1;
+                    quad[2] = delta.getZ();
+                    quad[3] = tl.region.getU2();
+                    quad[4] = tl.region.getV2();
+
+                    quad[5] = delta.getX();
+                    quad[6] = delta.getY() + 1;
+                    quad[7] = delta.getZ() + 1;
+                    quad[8] = tl.region.getU2();
+                    quad[9] = tl.region.getV();
+
+                    quad[10] = delta.getX() + 1;
+                    quad[11] = delta.getY() + 1;
+                    quad[12] = delta.getZ() + 1;
+                    quad[13] = tl.region.getU();
+                    quad[14] = tl.region.getV();
+
+                    quad[15] = delta.getX() + 1;
+                    quad[16] = delta.getY() + 1;
+                    quad[17] = delta.getZ();
+                    quad[18] = tl.region.getU();
+                    quad[19] = tl.region.getV2();
+                    int quadIdx = add(quad);
+                    onlyPage.posYFaces[delta.getX()][delta.getY()][delta.getZ()] = quadIdx;
+                    onlyPage.indexReverseTable[quadIdx] = delta.getX() * 256 * 6 + delta.getY() * 16 * 6 + delta.getZ() * 6 + 2;
+                }
+                boolean hasNegYNeighbor = delta.getY() != 0 && onlyPage.posYFaces[delta.getX()][delta.getY() - 1][delta.getZ()] != -1;
+                if (hasNegYNeighbor) {
+                    drop(onlyPage.posYFaces[delta.getX()][delta.getY() - 1][delta.getZ()]);
+                    onlyPage.posYFaces[delta.getX()][delta.getY() - 1][delta.getZ()] = -1;
+                } else {
+                    // add
+                    NodeTexAtlas.Tile tl = atl.getTile(bna.getNegY());
+                    quad[0] = delta.getX();
+                    quad[1] = delta.getY();
+                    quad[2] = delta.getZ();
+                    quad[3] = tl.region.getU();
+                    quad[4] = tl.region.getV2();
+
+                    quad[5] = delta.getX() + 1;
+                    quad[6] = delta.getY();
+                    quad[7] = delta.getZ();
+                    quad[8] = tl.region.getU2();
+                    quad[9] = tl.region.getV2();
+
+                    quad[10] = delta.getX() + 1;
+                    quad[11] = delta.getY();
+                    quad[12] = delta.getZ() + 1;
+                    quad[13] = tl.region.getU2();
+                    quad[14] = tl.region.getV();
+
+                    quad[15] = delta.getX();
+                    quad[16] = delta.getY();
+                    quad[17] = delta.getZ() + 1;
+                    quad[18] = tl.region.getU();
+                    quad[19] = tl.region.getV();
+                    int quadIdx = add(quad);
+                    onlyPage.negYFaces[delta.getX()][delta.getY()][delta.getZ()] = quadIdx;
+                    onlyPage.indexReverseTable[quadIdx] = delta.getX() * 256 * 6 + delta.getY() * 16 * 6 + delta.getZ() * 6 + 3;
+                }
+
+                boolean hasPosZNeighbor = delta.getZ() != 15 && onlyPage.negZFaces[delta.getX()][delta.getY()][delta.getZ() + 1] != -1;
+                if (hasPosZNeighbor) {
+                    System.out.println("HIT");
+                    drop(onlyPage.negZFaces[delta.getX()][delta.getY()][delta.getZ() + 1]);
+                    onlyPage.negZFaces[delta.getX()][delta.getY()][delta.getZ() + 1] = -1;
+                } else {
+                    // add
+                    NodeTexAtlas.Tile tl = atl.getTile(bna.getPosZ());
+                    quad[0] = delta.getX();
+                    quad[1] = delta.getY();
+                    quad[2] = delta.getZ() + 1;
+                    quad[3] = tl.region.getU();
+                    quad[4] = tl.region.getV2();
+
+                    quad[5] = delta.getX() + 1;
+                    quad[6] = delta.getY();
+                    quad[7] = delta.getZ() + 1;
+                    quad[8] = tl.region.getU2();
+                    quad[9] = tl.region.getV2();
+
+                    quad[10] = delta.getX() + 1;
+                    quad[11] = delta.getY() + 1;
+                    quad[12] = delta.getZ() + 1;
+                    quad[13] = tl.region.getU2();
+                    quad[14] = tl.region.getV();
+
+                    quad[15] = delta.getX();
+                    quad[16] = delta.getY() + 1;
+                    quad[17] = delta.getZ() + 1;
+                    quad[18] = tl.region.getU();
+                    quad[19] = tl.region.getV();
+                    int quadIdx = add(quad);
+                    onlyPage.posZFaces[delta.getX()][delta.getY()][delta.getZ()] = quadIdx;
+                    onlyPage.indexReverseTable[quadIdx] = delta.getX() * 256 * 6 + delta.getY() * 16 * 6 + delta.getZ() * 6 + 4;
+                }
+                boolean hasNegZNeighbor = delta.getZ() != 0 && onlyPage.posZFaces[delta.getX()][delta.getY()][delta.getZ() - 1] != -1;
+                if (hasNegZNeighbor) {
+                    drop(onlyPage.posZFaces[delta.getX()][delta.getY()][delta.getZ() - 1]);
+                    onlyPage.posZFaces[delta.getX()][delta.getY()][delta.getZ() - 1] = -1;
+                } else {
+                    // add
+                    NodeTexAtlas.Tile tl = atl.getTile(bna.getNegZ());
+                    quad[0] = delta.getX();
+                    quad[1] = delta.getY();
+                    quad[2] = delta.getZ();
+                    quad[3] = tl.region.getU2();
+                    quad[4] = tl.region.getV2();
+
+                    quad[5] = delta.getX();
+                    quad[6] = delta.getY() + 1;
+                    quad[7] = delta.getZ();
+                    quad[8] = tl.region.getU2();
+                    quad[9] = tl.region.getV();
+
+                    quad[10] = delta.getX() + 1;
+                    quad[11] = delta.getY() + 1;
+                    quad[12] = delta.getZ();
+                    quad[13] = tl.region.getU();
+                    quad[14] = tl.region.getV();
+
+                    quad[15] = delta.getX() + 1;
+                    quad[16] = delta.getY();
+                    quad[17] = delta.getZ();
+                    quad[18] = tl.region.getU();
+                    quad[19] = tl.region.getV2();
+                    int quadIdx = add(quad);
+                    onlyPage.negZFaces[delta.getX()][delta.getY()][delta.getZ()] = quadIdx;
+                    onlyPage.indexReverseTable[quadIdx] = delta.getX() * 256 * 6 + delta.getY() * 16 * 6 + delta.getZ() * 6 + 5;
+                }
+                break;
+            case DROP:
+                throw new NotImplementedException();
+            case CHANGE:
+                throw new NotImplementedException();
+        }
+    }
+
+    private int add(float[] quad) {
+        for (int i = 0; i < 48; i++) {
+            if (onlyPage.divisions[i].quadCount < 512) {
+                int index = onlyPage.divisions[i].addQuad(quad);
+                System.out.println("Added " + index);
+                return i * 512 + index;
+            }
+        }
+        throw new AssertionError("INTERNAL INCONSISTENCY (not enough space in chunk VBOs). Should never reach this state.");
+    }
+
+    private void drop(int index) {
+        if (index != -1) {
+            System.out.println("Dropping " + index);
+            int indexInPart = index % 512;
+            int division = index / 512;
+            if (indexInPart != onlyPage.divisions[division].quadCount - 1) {
+                System.out.println("Relocating "+  (onlyPage.divisions[division].quadCount - 1) + " to " + indexInPart);
+                // a relocation is happening
+                // The quad being relocated is the last one. The quadCount is grabbed BEFORE actual drop occurs
+                int relocPackedIndex = onlyPage.indexReverseTable[division * 512 + onlyPage.divisions[division].quadCount - 1];
+                // The reverse table is updated to reflect the relocation.
+                onlyPage.indexReverseTable[index] = relocPackedIndex;
+                onlyPage.indexReverseTable[division * 512 + onlyPage.divisions[division].quadCount - 1] = -1;
+
+                // We unpack the relocPackedIndex and use it to update the indirect pointer into the mesh data to point to the post-relocation
+                // position
+                if(relocPackedIndex<0){
+                    logger.error("This shouldn't happen.");
+                    return;
+                }
+                int x = relocPackedIndex/(256*6);
+                int y = (relocPackedIndex/(16*6))%16;
+                int z = (relocPackedIndex/6)%16;
+
+                switch(relocPackedIndex%6){
+                    case 0:
+                        onlyPage.posXFaces[x][y][z] = index;
+                        break;
+                    case 1:
+                        onlyPage.negXFaces[x][y][z] = index;
+                        break;
+                    case 2:
+                        onlyPage.posYFaces[x][y][z] = index;
+                        break;
+                    case 3:
+                        onlyPage.negYFaces[x][y][z] = index;
+                        break;
+                    case 4:
+                        onlyPage.posZFaces[x][y][z] = index;
+                        break;
+                    case 5:
+                        onlyPage.negZFaces[x][y][z] = index;
+                        break;
+
+
+                }
+
+            }
+            onlyPage.divisions[division].dropQuad(indexInPart);
+        }
+    }
+
+
+    // one mesh for each atlas page, but right now we're skipping that.
+    ChunkMesh onlyPage = new ChunkMesh();
+
 
     // DELEGATING METHODS BELOW
     @Override

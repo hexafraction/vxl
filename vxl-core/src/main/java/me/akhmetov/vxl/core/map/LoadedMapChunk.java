@@ -12,11 +12,13 @@ import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Represents a 16x16x16 element of the game world, with its associated metadata.
  */
-public class MapChunkImpl implements MapChunk {
+public class LoadedMapChunk implements MapChunk {
     /**
      * Used for caching and tracking whether saving is needed.
      */
@@ -52,8 +54,7 @@ public class MapChunkImpl implements MapChunk {
     private final int xid, yid, zid;
 
     /**
-     * The list of extended nodes. It becomes "sparse" during operation but becomes less "sparse" when a chunk is loaded
-     * from disk.
+     * The list of extended nodes. Key is based on coordinate.
      */
     public final TreeMap<Integer, NodeMetadata> extendedNodes = new TreeMap<>();
 
@@ -62,7 +63,7 @@ public class MapChunkImpl implements MapChunk {
      */
     private NodeResolutionTable resolver;
 
-    public MapChunkImpl(GameState game, int xid, int yid, int zid, NodeResolutionTable resolver) {
+    public LoadedMapChunk(GameState game, int xid, int yid, int zid, NodeResolutionTable resolver) {
         this.game = game;
         this.xid = xid;
         this.yid = yid;
@@ -82,6 +83,7 @@ public class MapChunkImpl implements MapChunk {
 
     @Override
     public void setNode(int xP, int yP, int zP, MapNode node) throws VxlPluginExecutionException {
+        MapNode old = getNode(xP, yP, zP);
         if (node instanceof MapNodeWithMetadata) {
 
             Object mdo = (((MapNodeWithMetadata) node).storeToMetadata());
@@ -98,7 +100,13 @@ public class MapChunkImpl implements MapChunk {
             if (node.getId() == 0) {
                 throw new VxlPluginExecutionException("Cannot store a node to a chunk if it hasn't been registered and received an ID");
             }
+            setNode(xP, yP, zP, node.getId());
         }
+        MapChunkDelta.Type deltaType = MapChunkDelta.Type.CHANGE;
+        if(old==HardcodedNodes.AIR) deltaType = MapChunkDelta.Type.ADD;
+        else if (node==HardcodedNodes.AIR) deltaType = MapChunkDelta.Type.DROP;
+        MapChunkDelta delta = new MapChunkDelta(deltaType, xP, yP, zP, old, node);
+        unhandledChanges.add(delta);
     }
 
     private int toTreeMapKey(int xP, int yP, int zP) {
@@ -317,4 +325,18 @@ public class MapChunkImpl implements MapChunk {
     }
 
     private Map<String, Serializable> chunkMetadata = new HashMap<>();
+
+    private LinkedBlockingQueue<MapChunkDelta> unhandledChanges = new LinkedBlockingQueue<MapChunkDelta>();
+
+    public MapChunkDelta pollQueue(){
+        return unhandledChanges.poll();
+    }
+
+    public int getQueueBacklog(){
+        return unhandledChanges.size();
+    }
+
+    public void clearQueue() {
+        unhandledChanges.clear();
+    }
 }

@@ -3,22 +3,43 @@ package me.akhmetov.vxl.core.map;
 import me.akhmetov.vxl.api.map.MapNode;
 
 public class MapChunkDelta {
-    public MapChunkDelta(int x, int y, int z, int chX, int chY, int chZ, MapNode before, MapNode after) {
+    public MapChunkDelta(Type type, int x, int y, int z, MapNode before, MapNode after) {
+        this.type = type;
         this.x = x;
         this.y = y;
         this.z = z;
-        this.chX = chX;
-        this.chY = chY;
-        this.chZ = chZ;
         this.before = before;
         this.after = after;
+    }
+
+    public Type getType() {
+        return type;
+    }
+
+    public int getX() {
+        return x;
+    }
+
+    public int getY() {
+        return y;
+    }
+
+    public int getZ() {
+        return z;
+    }
+
+    public MapNode getBefore() {
+        return before;
+    }
+
+    public MapNode getAfter() {
+        return after;
     }
 
     public enum Type {
         ADD, DROP, CHANGE
     }
     final int x, y, z;
-    final int chX, chY, chZ;
     final MapNode before, after;
-
+    final Type type;
 }

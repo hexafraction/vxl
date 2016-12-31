@@ -7,9 +7,10 @@ import com.badlogic.gdx.graphics.VertexAttributes;
 import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
-import com.badlogic.gdx.graphics.g3d.attributes.IntAttribute;
-import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
+import com.badlogic.gdx.graphics.g3d.Shader;
+import com.badlogic.gdx.graphics.g3d.attributes.*;
 import com.badlogic.gdx.graphics.g3d.model.MeshPart;
+import com.badlogic.gdx.graphics.g3d.shaders.DefaultShader;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.utils.Disposable;
@@ -22,6 +23,7 @@ import me.akhmetov.vxl.core.map.MapChunkDelta;
 import me.akhmetov.vxl.core.map.LoadedMapChunk;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.lwjgl.opengl.GL11;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import javax.xml.soap.Node;
@@ -43,6 +45,7 @@ public class RenderedChunk implements MapChunk {
     public RenderedChunk(LoadedMapChunk delegate, NodeTexAtlas atlas) {
         this.delegate = delegate;
         this.atl = atlas;
+
     }
 
     public void setNode(int xP, int yP, int zP, int node) {
@@ -102,7 +105,9 @@ public class RenderedChunk implements MapChunk {
                 if (divisions[i].quadCount != 0) {
                     divisions[i].gdxMeshPart = mb.part("cmd" + i, divisions[i].gdxMesh, GL20.GL_TRIANGLES, 0, divisions[i].quadCount * 6,
                             new Material(new TextureAttribute(TextureAttribute.Diffuse, atl.getGdxAtlas().getTextures().first()),
-                            new IntAttribute(IntAttribute.CullFace, GL20.GL_NONE)));
+                            new FloatAttribute(FloatAttribute.AlphaTest, 0.5f),
+                                    new BlendingAttribute(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA),
+                                    new IntAttribute(IntAttribute.CullFace, GL20.GL_BACK)));
                     //System.out.println(divisions[i].quadCount);
                 }
 
@@ -121,12 +126,21 @@ public class RenderedChunk implements MapChunk {
 
         }
 
-        private class ChunkMeshDivision implements Disposable {
+        public int countQuads(){
+            int total = 0;
+            for(ChunkMeshDivision cmd : divisions){
+                total+=cmd.quadCount;
+            }
+            return total;
+        }
+
+        public class ChunkMeshDivision implements Disposable {
             int quadCount = 0; // number of quads occupied, out of limit of 512.
             BitSet quadAllocationBitset = new BitSet(512); // allows us to determine which parts of the vertex buffer can be used for new quads
             Mesh gdxMesh = new Mesh(Mesh.VertexDataType.VertexBufferObject, false, 2048, 3072,
                     new VertexAttribute(VertexAttributes.Usage.Position, 3, ShaderProgram.POSITION_ATTRIBUTE),
                     new VertexAttribute(VertexAttributes.Usage.TextureCoordinates, 2, ShaderProgram.TEXCOORD_ATTRIBUTE + "0"));
+
             MeshPart gdxMeshPart;
 
             // Callers encouraged to reuse a single array for quad
@@ -177,7 +191,7 @@ public class RenderedChunk implements MapChunk {
                 }
                 int relocQuadId = sb.get((quadCount-1)*6)/4;
                 if (indirectIndex != quadCount - 1) {
-                    System.out.println("Actually relocating");
+
                     // it's not the last quad in the indices buffer. We need to relocate the last quad to the
                     // spot we just freed to keep the indices contiguous. We can leave the
                     // last value as stale (recall that the mesh part limit will keep us from rendering it, once we update
@@ -414,7 +428,7 @@ public class RenderedChunk implements MapChunk {
 
                 boolean hasPosZNeighbor = delta.getZ() != 15 && onlyPage.negZFaces[delta.getX()][delta.getY()][delta.getZ() + 1] != -1;
                 if (hasPosZNeighbor) {
-                    System.out.println("HIT");
+
                     drop(onlyPage.negZFaces[delta.getX()][delta.getY()][delta.getZ() + 1]);
                     onlyPage.negZFaces[delta.getX()][delta.getY()][delta.getZ() + 1] = -1;
                 } else {
@@ -493,7 +507,7 @@ public class RenderedChunk implements MapChunk {
         for (int i = 0; i < 48; i++) {
             if (onlyPage.divisions[i].quadCount < 512) {
                 int index = onlyPage.divisions[i].addQuad(quad);
-                System.out.println("Added " + index);
+                logger.trace("Adding quad at index " + index);
                 return i * 512 + index;
             }
         }
@@ -502,11 +516,11 @@ public class RenderedChunk implements MapChunk {
 
     private void drop(int index) {
         if (index != -1) {
-            System.out.println("Dropping " + index);
+            logger.trace("Dropping quad at " + index);
             int indexInPart = index % 512;
             int division = index / 512;
             if (indexInPart != onlyPage.divisions[division].quadCount - 1) {
-                System.out.println("Relocating "+  (onlyPage.divisions[division].quadCount - 1) + " to " + indexInPart);
+                logger.debug("Relocating "+  (onlyPage.divisions[division].quadCount - 1) + " to " + indexInPart);
                 // a relocation is happening
                 // The quad being relocated is the last one. The quadCount is grabbed BEFORE actual drop occurs
                 int relocPackedIndex = onlyPage.indexReverseTable[division * 512 + onlyPage.divisions[division].quadCount - 1];

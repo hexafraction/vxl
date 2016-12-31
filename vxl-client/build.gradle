@@ -9,6 +9,7 @@ project.ext.mainClassName = "DesktopLauncher"
 project.ext.assetsDir = new File("src/main/assets");
 sourceSets.main.java.srcDirs = [ "src/main/java" ]
 sourceSets.test.java.srcDirs = [ "src/test/java" ]
+sourceSets.main.resources.srcDirs = [ "src/main/assets" ]
 task run(dependsOn: classes, type: JavaExec) {
     main = project.mainClassName
     classpath = sourceSets.main.runtimeClasspath

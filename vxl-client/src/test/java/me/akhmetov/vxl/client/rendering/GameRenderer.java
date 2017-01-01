@@ -30,6 +30,8 @@ import me.akhmetov.vxl.core.map.LoadedMapChunk;
 import me.akhmetov.vxl.core.map.NodeResolutionTable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.lwjgl.opengl.ARBMultisample;
+import org.lwjgl.opengl.GL13;
 
 public class GameRenderer implements ApplicationListener {
 
@@ -136,33 +138,33 @@ public class GameRenderer implements ApplicationListener {
 //            }
 //        }
 
-        for (int j = 0; j < 16; j++) {
-            for (int k = 0; k < 16; k++) {
-                try {
-                    if((j / 2 + k / 2)%2==0)
-                        chk.setNode(0, j, k, nd1);
-                } catch (VxlPluginExecutionException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        for (int j = 0; j < 16; j++) {
-            for (int k = 0; k < 16; k++) {
-                try {
-                    if((15/2+j/2+k/2)%2==0)
-                        chk.setNode(15, j, k, nd1);
-                } catch (VxlPluginExecutionException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
+//        for (int j = 0; j < 16; j++) {
+//            for (int k = 0; k < 16; k++) {
+//                try {
+//                    if((j / 2 + k / 2)%2==0)
+//                        chk.setNode(0, j, k, nd1);
+//                } catch (VxlPluginExecutionException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }
+//        for (int j = 0; j < 16; j++) {
+//            for (int k = 0; k < 16; k++) {
+//                try {
+//                    if((15/2+j/2+k/2)%2==0)
+//                        chk.setNode(15, j, k, nd1);
+//                } catch (VxlPluginExecutionException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }
 
-        for (int i = 1; i < 15; i++) {
+        for (int i = 0; i < 16; i++) {
             for (int j = 0; j < 16; j++) {
                 for (int k = 0; k < 16; k++) {
                     try {
-                        if((i/2+j/2+k/2)%2==0)
-                            chk.setNode(i, j, k, (i>=4 && i < 12)?nd2:nd1);
+                        //if((i+j+k)%2==0)
+                            chk.setNode(i, j, k, (i>=4 && i < 12)?nd1:nd1);
                     } catch (VxlPluginExecutionException e) {
                         e.printStackTrace();
                     }
@@ -195,6 +197,7 @@ public class GameRenderer implements ApplicationListener {
         shader.begin(cam, rc);
 
         shader.bindTexture(atl.getGdxAtlas().getTextures().first());
+        Gdx.gl.glEnable(GL13.GL_MULTISAMPLE);
 
     }
 

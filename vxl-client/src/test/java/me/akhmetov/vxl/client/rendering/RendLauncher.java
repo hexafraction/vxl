@@ -1,7 +1,8 @@
 package me.akhmetov.vxl.client.rendering;
 
-import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
-import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
+import com.badlogic.gdx.Graphics;
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -11,14 +12,18 @@ public class RendLauncher {
     public static void main(String[] arg) throws Exception {
         ((LoggerContext) LogManager.getContext()).getConfiguration().getLoggerConfig(LogManager.ROOT_LOGGER_NAME).setLevel(Level.WARN);
         ((LoggerContext) LogManager.getContext()).updateLoggers();
-        LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
-        config.width = 1000;
-        config.height = 525;
-        config.backgroundFPS = 20;
-        config.title = "TEST";
-        config.vSyncEnabled = false;
-        config.foregroundFPS = 120;
-        config.fullscreen = false;
-        new LwjglApplication(new GameRenderer(), config);
+        Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
+        config.setWindowedMode(1000,525);
+
+        config.setIdleFPS(20);
+        config.setTitle("TEST");
+        config.setResizable( true);
+        //config.samples = 4;
+        config.useVsync(false);
+        config.setHdpiMode(Lwjgl3ApplicationConfiguration.HdpiMode.Logical);
+        config.enableGLDebugOutput(true, System.out);
+        //config.setBackBufferConfig(8,8,8,8,16,4,3);
+        //System.loadLibrary("nvapi");
+        new Lwjgl3Application(new GameRenderer(), config);
     }
 }

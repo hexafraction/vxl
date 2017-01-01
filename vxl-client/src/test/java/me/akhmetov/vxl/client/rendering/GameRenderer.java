@@ -163,7 +163,7 @@ public class GameRenderer implements ApplicationListener {
             for (int j = 0; j < 16; j++) {
                 for (int k = 0; k < 16; k++) {
                     try {
-                        //if((i+j+k)%2==0)
+                        if((i+j+k)%2==0)
                             chk.setNode(i, j, k, (i>=4 && i < 12)?nd1:nd1);
                     } catch (VxlPluginExecutionException e) {
                         e.printStackTrace();
@@ -256,6 +256,12 @@ public class GameRenderer implements ApplicationListener {
                     logger.fatal("Failed to handle a chunk delta. If this happens in production we should rebuild the entire chunk in this case.", e);
                 }
             }
+        }
+        if(Gdx.input.isKeyPressed(Input.Keys.W)){
+            shader.setWireframe(true);
+        }
+        if(Gdx.input.isKeyPressed(Input.Keys.Q)){
+            shader.setWireframe(false);
         }
         if(curIncPressed && !lastIncPressed) skip = (skip+1)%48;
         //mb.begin(cam);

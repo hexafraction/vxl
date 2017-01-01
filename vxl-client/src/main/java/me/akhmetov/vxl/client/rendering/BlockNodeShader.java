@@ -12,6 +12,7 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.lwjgl.opengl.GL11;
 
 public class BlockNodeShader implements Shader {
     ShaderProgram prog;
@@ -69,8 +70,22 @@ public class BlockNodeShader implements Shader {
     @Override
     public void render(Renderable renderable) {
         prog.setUniformMatrix(u_worldTrans, renderable.worldTransform);
+        if(wires) GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE );
+        else GL11.glPolygonMode(GL11.GL_FRONT, GL11.GL_FILL);
         renderable.meshPart.render(prog);
         //prog.setUniformi(u_texture, new Texture("").bind(););
+    }
+    boolean wires = false;
+    void setWireframe(boolean val){
+        if(val){
+            wires = true;
+            context.setDepthTest(GL20.GL_ALWAYS);
+            context.setCullFace(GL20.GL_NONE);
+        } else {
+            wires = false;
+            context.setDepthTest(GL20.GL_LESS);
+            context.setCullFace(GL20.GL_BACK);
+        }
     }
 
     @Override

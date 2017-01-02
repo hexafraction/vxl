@@ -3,7 +3,6 @@ package me.akhmetov.vxl.client.rendering;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -12,7 +11,6 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.Renderable;
-import com.badlogic.gdx.graphics.g3d.Shader;
 import com.badlogic.gdx.graphics.g3d.utils.*;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.utils.Array;
@@ -30,7 +28,6 @@ import me.akhmetov.vxl.core.map.LoadedMapChunk;
 import me.akhmetov.vxl.core.map.NodeResolutionTable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.lwjgl.opengl.ARBMultisample;
 import org.lwjgl.opengl.GL13;
 
 public class GameRenderer implements ApplicationListener {
@@ -38,7 +35,7 @@ public class GameRenderer implements ApplicationListener {
     /* TODO next few revisions gameplan:
      1) Get a working shader of my own being loaded from resources. DONE
      1a) Wire up the necessary attributes and uniforms including minimal animation. ALMOST DONE (todo some uniforms and attrs for animation)
-     2a) Create and test dropping a node. All the data structures are there, just do the add in reverse (drop visible, add hidden faces)
+     2a) Create and test dropping a node. All the data structures are there, just do the add in reverse (drop visible, add hidden faces) DONE
      2) Clean up code massively (by reimplementing algorithms atop new structure). Allow separating by atlas pages, meshes, etc and extend possible attributes.
      3) Update the appearance class to handle transparent textures. Check for this and don't cull quads that face right into
             a non-identical node
@@ -62,7 +59,7 @@ public class GameRenderer implements ApplicationListener {
     GameState gs = new GameState(null, null, true);
     NodeResolutionTable nrt = new NodeResolutionTable(gs);
 
-    RenderedChunk chk;
+    OldRenderedChunk chk;
     private NodeTexAtlas atl;
     private ShaderProgram shaderProgram;
     private BlockNodeShader shader;
@@ -99,7 +96,7 @@ public class GameRenderer implements ApplicationListener {
         atl = new NodeTexAtlas(512, 512);
         ap1 = new BlockNodeAppearance(tex1, tex1, tex3, tex3, tex1, tex1);
         ap2 = new BlockNodeAppearance(tex2, tex2, tex2, tex2, tex2, tex2);
-        chk = new RenderedChunk(new LoadedMapChunk(gs, 0, 0, 0, nrt), atl);
+        chk = new OldRenderedChunk(new LoadedMapChunk(gs, 0, 0, 0, nrt), atl);
         for (int i = 0; i < 16; i++) {
             for (int j = 0; j < 16; j++) {
                 for (int k = 0; k < 16; k++) {
@@ -163,8 +160,20 @@ public class GameRenderer implements ApplicationListener {
             for (int j = 0; j < 16; j++) {
                 for (int k = 0; k < 16; k++) {
                     try {
-                        if((i+j+k)%2==0)
+                        //if((i+j+k)%2==0)
                             chk.setNode(i, j, k, (i>=4 && i < 12)?nd1:nd1);
+                    } catch (VxlPluginExecutionException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+        for (int i = 0; i < 16; i++) {
+            for (int j = 0; j < 16; j++) {
+                for (int k = 0; k < 16; k++) {
+                    try {
+                        if((i/2+j/2+k/2)%2==0)
+                            chk.setNode(i, j, k, HardcodedNodes.AIR);
                     } catch (VxlPluginExecutionException e) {
                         e.printStackTrace();
                     }
@@ -203,7 +212,8 @@ public class GameRenderer implements ApplicationListener {
 
     @Override
     public void resize(int width, int height) {
-
+        cam.viewportHeight = height;
+        cam.viewportWidth = width;
     }
 
     boolean lastSpacePressed = false;
@@ -215,7 +225,7 @@ public class GameRenderer implements ApplicationListener {
     @Override
     public void render() {
         camController.update();
-        shader.update(cam);
+
         Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         if (frames == 30) {
             Gdx.graphics.setTitle((usingShader?"OWN":"GDX")+" | QUADS: "+chk.onlyPage.countQuads()+" | FPS: " + Gdx.graphics.getFramesPerSecond());
@@ -271,6 +281,8 @@ public class GameRenderer implements ApplicationListener {
         //shaderProgram.setUniformi("u_texture", 0);
         int skipped = 0;
         if(usingShader) {
+
+            shader.update(cam);
             renderables.clear();
             chk.onlyPage.getGdxModelInstance().getRenderables(renderables, renderablePool);
             //renderables.reverse();

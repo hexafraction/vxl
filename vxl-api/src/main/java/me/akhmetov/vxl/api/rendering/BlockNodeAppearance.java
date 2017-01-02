@@ -1,5 +1,8 @@
 package me.akhmetov.vxl.api.rendering;
 
+/**
+ * Describes the appearance of a node as a 1m*1m*1m "block", with textures of various types. Useful for most nodes.
+ */
 public class BlockNodeAppearance extends NodeAppearance {
     //FIXME light emission and stuff
     private Texture posX;

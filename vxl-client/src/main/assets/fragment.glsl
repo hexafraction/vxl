@@ -2,8 +2,8 @@
 #ifdef GL_ES
     precision mediump float;
 #endif
-varying vec4 v_color;
-varying vec2 v_texCoords;
+in vec2 v_texCoords;
+out vec4 color;
 uniform sampler2D u_texture;
 uniform mat4 u_projViewTrans;
 
@@ -12,6 +12,6 @@ void main() {
      if(tex.a <= 0.5) {discard; }
      else {
         tex.a = 1;
-        gl_FragColor = tex;
+        color = tex;
      }
 }

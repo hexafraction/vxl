@@ -21,7 +21,7 @@ public class RendLauncher {
         //config.samples = 4;
         config.useVsync(false);
         config.setHdpiMode(Lwjgl3ApplicationConfiguration.HdpiMode.Logical);
-        config.enableGLDebugOutput(true, System.out);
+        //config.enableGLDebugOutput(true, System.out);
         //config.setBackBufferConfig(8,8,8,8,16,4,3);
         //System.loadLibrary("nvapi");
         new Lwjgl3Application(new GameRenderer(), config);

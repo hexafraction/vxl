@@ -32,7 +32,7 @@ public enum RenderBucket {
      *  due to the grid-like structure of the game) it cannot be used for general-case translucent objects. Currently,
      *  it uses the depth test for somewhat usable results--if a fragment fails the depth test it was behind a closer
      *  fragment and thus the liquid color is not blended in. If the depth test succeeds, then the color gets drawn--but
-     *  the depth buffer is not written. Any other liquid front-faces (i.e. due to glass) need to be preserved properly.
+     *  the depth buffer is <i>not</i> written. Any other liquid front-faces (i.e. due to glass) need to be preserved properly.
      *  Rendering the liquid bucket does not cause the depth buffer to be updated as a result (so a farther-back frontface
      *  of water can be drawn and blended in).
      *

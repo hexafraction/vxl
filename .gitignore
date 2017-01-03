@@ -32,3 +32,4 @@ fabric.properties
 *.war
 *.ear
 hs_err_pid*
+run.sh

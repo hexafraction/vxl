@@ -62,7 +62,7 @@ public class GameRenderer implements ApplicationListener {
     OldRenderedChunk chk;
     private NodeTexAtlas atl;
     private ShaderProgram shaderProgram;
-    private BlockNodeShader shader;
+    private RigidBlockNodeShader shader;
 
 
     public GameRenderer() throws Exception {
@@ -193,9 +193,9 @@ public class GameRenderer implements ApplicationListener {
 //            }
 //        }
         lam.addChunk(chk);
-        final String vertexShader = Gdx.files.internal("vertex.glsl").readString();
-        final String fragmentShader = Gdx.files.internal("fragment.glsl").readString();
-        shader = new BlockNodeShader();
+        final String vertexShader = Gdx.files.internal("rigid_vtx.glsl").readString();
+        final String fragmentShader = Gdx.files.internal("rigid_frag.glsl").readString();
+        shader = new RigidBlockNodeShader();
         shader.init();
         sb = new SpriteBatch();
         mb = new ModelBatch((camera, renderables) -> {
@@ -282,7 +282,7 @@ public class GameRenderer implements ApplicationListener {
         int skipped = 0;
         if(usingShader) {
 
-            shader.update(cam);
+            shader.update(cam, 0.0);
             renderables.clear();
             chk.onlyPage.getGdxModelInstance().getRenderables(renderables, renderablePool);
             //renderables.reverse();

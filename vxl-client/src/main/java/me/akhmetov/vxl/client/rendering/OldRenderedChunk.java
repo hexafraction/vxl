@@ -80,6 +80,7 @@ public class OldRenderedChunk implements MapChunk {
     }
 
 
+    @SuppressWarnings("Duplicates")
     public class ChunkMesh implements Disposable {
         public ChunkMesh() {
             for (int i = 0; i < 48; i++) {

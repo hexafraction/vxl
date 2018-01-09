@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.Renderable;
+import com.badlogic.gdx.graphics.g3d.Shader;
 import com.badlogic.gdx.graphics.g3d.utils.*;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.utils.Array;
@@ -95,6 +96,9 @@ public class GameRenderer implements ApplicationListener {
         cam.far = 300f;
         cam.update();
         rc = new RenderContext(new DefaultTextureBinder(DefaultTextureBinder.WEIGHTED));
+        // FIXME!!!
+        BlockNodeShader bns = (BlockNodeShader) shaderManager.getShader(null);
+        bns.begin(cam, rc);
         camController = new CameraInputController(cam);
         Gdx.input.setInputProcessor(camController);
         tex1 = new NaiveTexture("tex_1.png");
@@ -169,7 +173,7 @@ public class GameRenderer implements ApplicationListener {
                 for (int k = 0; k < 16; k++) {
                     try {
                         //if((i+j+k)%2==0)
-                        chk.getDelegate().setNode(i, j, k, (i >= 4 && i < 12) ? nd2 : nd1);
+                        chk.getDelegate().setNode(i, j, k, (j >= 4 && j < 12) ? nd2 : nd1);
                     } catch (VxlPluginExecutionException e) {
                         e.printStackTrace();
                     }
@@ -250,6 +254,7 @@ public class GameRenderer implements ApplicationListener {
                 logger.fatal("Failed to handle a chunk delta. If this happens in production we should update the entire chunk in this case.", e);
             }
         }
+
         if (Gdx.input.isKeyPressed(Input.Keys.A)) {
             while (chk.getDelegate().getQueueBacklog() > 0) {
                 try {
@@ -265,9 +270,16 @@ public class GameRenderer implements ApplicationListener {
         if (Gdx.input.isKeyPressed(Input.Keys.Q)) {
             shaderManager.setWireframe(false);
         }
-        if (curIncPressed && !lastIncPressed) skip = (skip + 1) % 48;
+        if (curIncPressed && !lastIncPressed) {
+            try {
+                chk.handleOneQueueItem();
+                chk.handleOneQueueItem();
+            } catch (Throwable e) {
+                logger.fatal("Failed to handle a chunk delta. If this happens in production we should update the entire chunk in this case.", e);
+            }
+        }
         //mb.begin(cam);
-        cam.update();
+        //cam.update();
         //shaderProgram.setUniformMatrix("u_projViewTrans", cam.combined);
         //atl.getGdxAtlas().getTextures().first().bind(0);
         //shaderProgram.setUniformi("u_texture", 0);

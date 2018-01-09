@@ -8,10 +8,10 @@ uniform sampler2D u_texture;
 uniform mat4 u_projViewTrans;
 
 void main() {
-     //vec4 tex = texture(u_texture, v_texCoords);
-     //if(tex.a <= 0.5) {discard; }
-     //else {
-        //tex.a = 1;
-        color = vec4(1.0, 0.0, 0.0, 1.0);
-     //}
+     vec4 tex = texture(u_texture, v_texCoords);
+     if(tex.a <= 0.5) {discard; }
+     else {
+        tex.a = 1;
+        color = tex;
+     }
 }

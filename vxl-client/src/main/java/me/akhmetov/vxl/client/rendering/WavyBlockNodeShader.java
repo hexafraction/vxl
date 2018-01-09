@@ -6,8 +6,10 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g3d.Renderable;
 import com.badlogic.gdx.graphics.g3d.Shader;
+import com.badlogic.gdx.graphics.g3d.model.MeshPart;
 import com.badlogic.gdx.graphics.g3d.utils.RenderContext;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,6 +24,14 @@ public class WavyBlockNodeShader extends BlockNodeShader {
         super.init();
 
         u_time = prog.getUniformLocation("u_time");
+    }
+
+    @Override
+    public void render(MeshPart part, Matrix4 worldTransform) {
+        prog.setUniformMatrix(u_worldTrans, worldTransform);
+        if(wires) GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE );
+        else GL11.glPolygonMode(GL11.GL_FRONT, GL11.GL_FILL);
+        part.render(prog);
     }
 
     public void bindTexture(Texture tex){

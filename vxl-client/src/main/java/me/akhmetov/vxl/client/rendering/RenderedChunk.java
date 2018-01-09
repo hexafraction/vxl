@@ -2,8 +2,11 @@ package me.akhmetov.vxl.client.rendering;
 
 import com.badlogic.gdx.backends.lwjgl3.audio.Wav;
 import com.badlogic.gdx.graphics.*;
+import com.badlogic.gdx.graphics.g3d.ModelBatch;
+import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.Shader;
 import com.badlogic.gdx.graphics.g3d.model.MeshPart;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.utils.Disposable;
 import me.akhmetov.vxl.api.VxlPluginExecutionException;
 import me.akhmetov.vxl.api.rendering.BlockNodeAppearance;
@@ -144,7 +147,7 @@ public class RenderedChunk implements VxlRenderable {
                 // Some ugly ClassCastExceptions here. Oh, well, will be fixed when a real pipeline for appearances comes into play.
                 if (x != 15) {
                     NodeAppearance appXp = delegate.getNode(x + 1, y, z).getAppearance();
-                    if (appXp instanceof BlockNodeAppearance && ((BlockNodeAppearance) appXp).getBucket().equals(bucket)) {
+                    if (appXp instanceof BlockNodeAppearance && ((BlockNodeAppearance) appXp).getBucket().equals(rendBucket)) {
                         bucket.addNegX(atl, x + 1, y, z, (BlockNodeAppearance) appXp, 0, 0);
                     }
                 }
@@ -152,7 +155,7 @@ public class RenderedChunk implements VxlRenderable {
                 bucket.posXFaces[x][y][z] = -1;
                 if (x != 0) {
                     NodeAppearance appXn = delegate.getNode(x - 1, y, z).getAppearance();
-                    if (appXn instanceof BlockNodeAppearance && ((BlockNodeAppearance) appXn).getBucket().equals(bucket)) {
+                    if (appXn instanceof BlockNodeAppearance && ((BlockNodeAppearance) appXn).getBucket().equals(rendBucket)) {
                         bucket.addPosX(atl, x - 1, y, z, (BlockNodeAppearance) appXn, 0, 0);
                     }
                 }
@@ -161,7 +164,7 @@ public class RenderedChunk implements VxlRenderable {
 
                 if (y != 15) {
                     NodeAppearance appYp = delegate.getNode(x, y + 1, z).getAppearance();
-                    if (appYp instanceof BlockNodeAppearance && ((BlockNodeAppearance) appYp).getBucket().equals(bucket)) {
+                    if (appYp instanceof BlockNodeAppearance && ((BlockNodeAppearance) appYp).getBucket().equals(rendBucket)) {
                         bucket.addNegY(atl, x, y + 1, z, (BlockNodeAppearance) appYp, 0, 0);
                     }
                 }
@@ -171,7 +174,7 @@ public class RenderedChunk implements VxlRenderable {
 
                 if (y != 0) {
                     NodeAppearance appYn = delegate.getNode(x, y - 1, z).getAppearance();
-                    if (appYn instanceof BlockNodeAppearance && ((BlockNodeAppearance) appYn).getBucket().equals(bucket)) {
+                    if (appYn instanceof BlockNodeAppearance && ((BlockNodeAppearance) appYn).getBucket().equals(rendBucket)) {
                         bucket.addPosY(atl, x, y - 1, z, (BlockNodeAppearance) appYn, 0, 0);
                     }
                 }
@@ -181,7 +184,7 @@ public class RenderedChunk implements VxlRenderable {
 
                 if (z != 15) {
                     NodeAppearance appZp = delegate.getNode(x, y, z + 1).getAppearance();
-                    if (appZp instanceof BlockNodeAppearance && ((BlockNodeAppearance) appZp).getBucket().equals(bucket)) {
+                    if (appZp instanceof BlockNodeAppearance && ((BlockNodeAppearance) appZp).getBucket().equals(rendBucket)) {
                         bucket.addNegZ(atl, x, y, z + 1, (BlockNodeAppearance) appZp, 0, 0);
                     }
                 }
@@ -191,8 +194,8 @@ public class RenderedChunk implements VxlRenderable {
 
                 if (z != 0) {
                     NodeAppearance appZn = delegate.getNode(x, y, z - 1).getAppearance();
-                    if (appZn instanceof BlockNodeAppearance && ((BlockNodeAppearance) appZn).getBucket().equals(bucket)) {
-                        bucket.addNegZ(atl, x, y, z - 1, (BlockNodeAppearance) appZn, 0, 0);
+                    if (appZn instanceof BlockNodeAppearance && ((BlockNodeAppearance) appZn).getBucket().equals(rendBucket)) {
+                        bucket.addPosZ(atl, x, y, z - 1, (BlockNodeAppearance) appZn, 0, 0);
                     }
                 }
 
@@ -220,6 +223,8 @@ public class RenderedChunk implements VxlRenderable {
                         .filter(Objects::nonNull)
                         .mapToInt(QuadMesh::getQuadCount).sum());
     }
+
+
 
 /*
      * OVERALL STRUCTURE:
@@ -578,15 +583,20 @@ public class RenderedChunk implements VxlRenderable {
             posXFaces[x][y][z] = quadIdx;
         }
 
+        Matrix4 eye = new Matrix4();
         public void render() {
             for(QuadMesh qm : meshes){
                 if(qm!=null && qm.getQuadCount()!=0){
                     // FIXME casting!!!
                     qm.update();
-                    qm.gdxMeshPart.render(((BlockNodeShader) shader).prog);
+                    BlockNodeShader shader = (BlockNodeShader) this.shader;
+
+                    shader.render(qm.gdxMeshPart, eye);
                 }
             }
         }
+
+
     }
 
     /**
@@ -594,8 +604,8 @@ public class RenderedChunk implements VxlRenderable {
      * in OpenGL 3.1.
      */
     private class QuadMesh implements Disposable {
-        private final FloatBuffer vertices;
-        private final ShortBuffer indices;
+        //private final FloatBuffer vertices;
+        //private final ShortBuffer indices;
         private final boolean hasAnimWeight;
         private final Mesh gdxMesh;
         private final BitSet quadBitmap = new BitSet(512);
@@ -614,6 +624,7 @@ public class RenderedChunk implements VxlRenderable {
             } else {
                 gdxMeshPart.set(id, gdxMesh, 0, quadCount * 6, GL20.GL_TRIANGLES);
             }
+
         }
 
         private final String id;
@@ -628,10 +639,10 @@ public class RenderedChunk implements VxlRenderable {
                     new VertexAttribute(VertexAttributes.Usage.BoneWeight, 1, "a_anim_weight"));
             else gdxMesh = new Mesh(false, 2048, 3072,
                     new VertexAttribute(VertexAttributes.Usage.Position, 3, "a_pos"),
-                    new VertexAttribute(VertexAttributes.Usage.TextureCoordinates, 2, "a_texcoord"),
+                    new VertexAttribute(VertexAttributes.Usage.TextureCoordinates, 2, "a_texCoord0"),
                     new VertexAttribute(VertexAttributes.Usage.Generic, 1, "a_vtx_lighting"));
-            vertices = gdxMesh.getVerticesBuffer();
-            indices = gdxMesh.getIndicesBuffer();
+            //vertices = gdxMesh.getVerticesBuffer();
+            //indices = gdxMesh.getIndicesBuffer();
         }
 
         @Override
@@ -651,9 +662,11 @@ public class RenderedChunk implements VxlRenderable {
                 assert (index < 512);
 
                 maxIndex = Math.max(index, maxIndex);
+                FloatBuffer vertices = gdxMesh.getVerticesBuffer();
                 vertices.limit(Math.max(vertices.position(), (maxIndex + 1) * (hasAnimWeight ? 28 : 24)));
-                vertices.position(index);
+                vertices.position(index*(hasAnimWeight ? 28 : 24));
                 vertices.put(quadBuf);
+                ShortBuffer indices = gdxMesh.getIndicesBuffer();
                 indices.limit(quadCount * 6 + 6);
                 indices.position(quadCount * 6);
                 indices.put((short) (index * 4 + 0));
@@ -675,7 +688,7 @@ public class RenderedChunk implements VxlRenderable {
         // return value is whether a remap took place, in which case the ID arrays need to be updated so the last
         // quad is now where the dropped quad was.
         private boolean dropAndRelocateLast(int index) {
-
+            ShortBuffer indices = gdxMesh.getIndicesBuffer();
             indices.limit(indices.capacity());
             int droppedFirstIndex = indices.get(index * 6);
             assert (quadBitmap.get(droppedFirstIndex / 4)) : "Expected the index being dropped to still be in the bitmap.";
@@ -713,6 +726,8 @@ public class RenderedChunk implements VxlRenderable {
             translucent.render();
         }
     }
+
+
 
     @Override
     public void update(Camera cam) {

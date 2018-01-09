@@ -6,8 +6,10 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g3d.Renderable;
 import com.badlogic.gdx.graphics.g3d.Shader;
+import com.badlogic.gdx.graphics.g3d.model.MeshPart;
 import com.badlogic.gdx.graphics.g3d.utils.RenderContext;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -41,8 +43,26 @@ public class RigidBlockNodeShader extends BlockNodeShader {
         prog.setUniformMatrix(u_worldTrans, renderable.worldTransform);
         if(wires) GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE );
         else GL11.glPolygonMode(GL11.GL_FRONT, GL11.GL_FILL);
-        renderable.meshPart.render(prog);
+        GL11.glDepthFunc(GL11.GL_LESS);
+        GL11.glEnable(GL11.GL_DEPTH_TEST);
         prog.setUniformi(u_texture, texUnit);
+        renderable.meshPart.render(prog, true);
+    }
+
+    @Override
+    public void render(MeshPart part, Matrix4 worldTransform) {
+        prog.setUniformMatrix(u_worldTrans, worldTransform);
+        if(wires) GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE );
+        else GL11.glPolygonMode(GL11.GL_FRONT, GL11.GL_FILL);
+
+        GL11.glDepthFunc(GL11.GL_LESS);
+        GL11.glEnable(GL11.GL_DEPTH_TEST);
+        prog.setUniformi(u_texture, texUnit);
+        part.mesh.setAutoBind(true);
+
+        //part.mesh.bind(prog);
+        part.render(prog);
+        //part.mesh.unbind(prog);
     }
 
     @Override

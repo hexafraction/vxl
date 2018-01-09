@@ -8,7 +8,7 @@ public class BlockNodeAppearance extends NodeAppearance {
     private Texture posX;
     private Texture negX;
     private Texture posY;
-
+    private RenderBucket bucket;
     public Texture getPosX() {
         return posX;
     }
@@ -37,7 +37,13 @@ public class BlockNodeAppearance extends NodeAppearance {
     private Texture posZ;
     private Texture negZ;
 
-    public BlockNodeAppearance(Texture posX, Texture negX, Texture posY, Texture negY, Texture posZ, Texture negZ) {
+    public RenderBucket getBucket() {
+        return bucket;
+    }
+
+    public BlockNodeAppearance(RenderBucket bucket, Texture posX, Texture negX, Texture posY, Texture negY, Texture posZ, Texture negZ) {
+        this.bucket = bucket;
+
         this.posX = posX;
         this.negX = negX;
         this.posY = posY;

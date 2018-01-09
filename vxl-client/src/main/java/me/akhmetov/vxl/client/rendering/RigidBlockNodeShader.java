@@ -42,7 +42,7 @@ public class RigidBlockNodeShader extends BlockNodeShader {
         if(wires) GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE );
         else GL11.glPolygonMode(GL11.GL_FRONT, GL11.GL_FILL);
         renderable.meshPart.render(prog);
-        //prog.setUniformi(u_texture, new Texture("").bind(););
+        prog.setUniformi(u_texture, texUnit);
     }
 
     @Override

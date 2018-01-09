@@ -5,9 +5,14 @@ import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g3d.Shader;
 import com.badlogic.gdx.graphics.g3d.model.MeshPart;
 import com.badlogic.gdx.utils.Disposable;
+import me.akhmetov.vxl.api.VxlPluginExecutionException;
 import me.akhmetov.vxl.api.rendering.BlockNodeAppearance;
+import me.akhmetov.vxl.api.rendering.NodeAppearance;
 import me.akhmetov.vxl.api.rendering.RenderBucket;
 import me.akhmetov.vxl.core.map.LoadedMapChunk;
+import me.akhmetov.vxl.core.map.MapChunkDelta;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import sun.security.provider.certpath.Vertex;
 
 import java.nio.FloatBuffer;
@@ -15,15 +20,208 @@ import java.nio.ShortBuffer;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.EnumMap;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class RenderedChunk implements VxlRenderable {
-    public RenderedChunk(LoadedMapChunk delegate) {
+
+    private static Logger logger = LogManager.getLogger();
+    private ShaderManager sm;
+    private NodeTexAtlas atl;
+
+    public RenderedChunk(LoadedMapChunk delegate, ShaderManager sm, NodeTexAtlas atl) {
         this.delegate = delegate;
+        this.atl = atl;
+        this.sm = sm;
     }
 
     private final LoadedMapChunk delegate;
 
-    /*
+    public LoadedMapChunk getDelegate() {
+        return delegate;
+    }
+
+
+    public int getQueueBacklog() {
+        return delegate.getQueueBacklog();
+    }
+
+    public void clearQueue() {
+        delegate.clearQueue();
+    }
+
+    public void handleOneQueueItem() throws VxlPluginExecutionException {
+        MapChunkDelta mcd = pollQueue();
+        if (mcd != null)
+            handleDelta(mcd, atl);
+    }
+
+    public MapChunkDelta pollQueue() {
+        return delegate.pollQueue();
+    }
+
+    public void handleDelta(MapChunkDelta delta, NodeTexAtlas atl) throws VxlPluginExecutionException {
+
+
+        switch (delta.getType()) {
+            case ADD:
+                if (!(delta.getAfter().getAppearance() instanceof BlockNodeAppearance)) {
+                    logger.error("Can't render an appearance of " + delta.getAfter().getAppearance().getClass().getName() + " just yet. Tell the dev.");
+                    return;
+                }
+                BlockNodeAppearance bna = (BlockNodeAppearance) delta.getAfter().getAppearance();
+                RenderBucket rendBucket = bna.getBucket();
+                ChunkBucket bucket = getOrComputeBucket(rendBucket);
+                int x = delta.getX();
+                int y = delta.getY();
+                int z = delta.getZ();
+                boolean dropPosX = x != 15 && bucket.negXFaces[x + 1][y][z] != -1;
+                boolean dropNegX = x != 0 && bucket.posXFaces[x - 1][y][z] != -1;
+                boolean dropPosY = y != 15 && bucket.negYFaces[x][y + 1][z] != -1;
+                boolean dropNegY = y != 0 && bucket.posYFaces[x][y - 1][z] != -1;
+                boolean dropPosZ = z != 15 && bucket.negZFaces[x][y][z + 1] != -1;
+                boolean dropNegZ = z != 0 && bucket.posZFaces[x][y][z - 1] != -1;
+
+                if (dropPosX) {
+                    bucket.drop(bucket.negXFaces[x + 1][y][z]);
+                    bucket.negXFaces[x + 1][y][z] = -1;
+                } else {
+                    bucket.addPosX(atl, x, y, z, bna, 0, 0);
+                }
+
+                if (dropNegX) {
+                    bucket.drop(bucket.posXFaces[x - 1][y][z]);
+                    bucket.posXFaces[x - 1][y][z] = -1;
+                } else {
+                    bucket.addNegX(atl, x, y, z, bna, 0, 0);
+
+                }
+
+
+                if (dropPosY) {
+                    bucket.drop(bucket.negYFaces[x][y + 1][z]);
+                    bucket.negYFaces[x][y + 1][z] = -1;
+                } else {
+                    bucket.addPosY(atl, x, y, z, bna, 0, 0);
+                }
+
+                if (dropNegY) {
+                    bucket.drop(bucket.posYFaces[x][y - 1][z]);
+                    bucket.posYFaces[x][y - 1][z] = -1;
+                } else {
+                    bucket.addNegY(atl, x, y, z, bna, 0, 0);
+                }
+
+
+                if (dropPosZ) {
+
+                    bucket.drop(bucket.negZFaces[x][y][z + 1]);
+                    bucket.negZFaces[x][y][z + 1] = -1;
+                } else {
+
+                    bucket.addPosZ(atl, x, y, z, bna, 0, 0);
+                }
+
+                if (dropNegZ) {
+                    bucket.drop(bucket.posZFaces[x][y][z - 1]);
+                    bucket.posZFaces[x][y][z - 1] = -1;
+                } else {
+                    bucket.addNegZ(atl, x, y, z, bna, 0, 0);
+                }
+                break;
+            case DROP:
+
+                if (!(delta.getBefore().getAppearance() instanceof BlockNodeAppearance)) {
+                    logger.error("Can't drop an appearance of " + delta.getAfter().getAppearance().getClass().getName() + " just yet. Tell the dev.");
+                    return;
+                }
+                BlockNodeAppearance bnb = (BlockNodeAppearance) delta.getBefore().getAppearance();
+                rendBucket = bnb.getBucket();
+                bucket = getOrComputeBucket(rendBucket);
+                x = delta.getX();
+                y = delta.getY();
+                z = delta.getZ();
+                // Some ugly ClassCastExceptions here. Oh, well, will be fixed when a real pipeline for appearances comes into play.
+                if (x != 15) {
+                    NodeAppearance appXp = delegate.getNode(x + 1, y, z).getAppearance();
+                    if (appXp instanceof BlockNodeAppearance && ((BlockNodeAppearance) appXp).getBucket().equals(bucket)) {
+                        bucket.addNegX(atl, x + 1, y, z, (BlockNodeAppearance) appXp, 0, 0);
+                    }
+                }
+                bucket.drop(bucket.posXFaces[x][y][z]);
+                bucket.posXFaces[x][y][z] = -1;
+                if (x != 0) {
+                    NodeAppearance appXn = delegate.getNode(x - 1, y, z).getAppearance();
+                    if (appXn instanceof BlockNodeAppearance && ((BlockNodeAppearance) appXn).getBucket().equals(bucket)) {
+                        bucket.addPosX(atl, x - 1, y, z, (BlockNodeAppearance) appXn, 0, 0);
+                    }
+                }
+                bucket.drop(bucket.negXFaces[x][y][z]);
+                bucket.negXFaces[x][y][z] = -1;
+
+                if (y != 15) {
+                    NodeAppearance appYp = delegate.getNode(x, y + 1, z).getAppearance();
+                    if (appYp instanceof BlockNodeAppearance && ((BlockNodeAppearance) appYp).getBucket().equals(bucket)) {
+                        bucket.addNegY(atl, x, y + 1, z, (BlockNodeAppearance) appYp, 0, 0);
+                    }
+                }
+
+                bucket.drop(bucket.posYFaces[x][y][z]);
+                bucket.posYFaces[x][y][z] = -1;
+
+                if (y != 0) {
+                    NodeAppearance appYn = delegate.getNode(x, y - 1, z).getAppearance();
+                    if (appYn instanceof BlockNodeAppearance && ((BlockNodeAppearance) appYn).getBucket().equals(bucket)) {
+                        bucket.addPosY(atl, x, y - 1, z, (BlockNodeAppearance) appYn, 0, 0);
+                    }
+                }
+
+                bucket.drop(bucket.negYFaces[x][y][z]);
+                bucket.negYFaces[x][y][z] = -1;
+
+                if (z != 15) {
+                    NodeAppearance appZp = delegate.getNode(x, y, z + 1).getAppearance();
+                    if (appZp instanceof BlockNodeAppearance && ((BlockNodeAppearance) appZp).getBucket().equals(bucket)) {
+                        bucket.addNegZ(atl, x, y, z + 1, (BlockNodeAppearance) appZp, 0, 0);
+                    }
+                }
+
+                bucket.drop(bucket.posZFaces[x][y][z]);
+                bucket.posZFaces[x][y][z] = -1;
+
+                if (z != 0) {
+                    NodeAppearance appZn = delegate.getNode(x, y, z - 1).getAppearance();
+                    if (appZn instanceof BlockNodeAppearance && ((BlockNodeAppearance) appZn).getBucket().equals(bucket)) {
+                        bucket.addNegZ(atl, x, y, z - 1, (BlockNodeAppearance) appZn, 0, 0);
+                    }
+                }
+
+
+                bucket.drop(bucket.negZFaces[x][y][z]);
+                bucket.negZFaces[x][y][z] = -1;
+
+                break;
+            case CHANGE:
+                throw new UnsupportedOperationException();
+        }
+    }
+
+    private ChunkBucket getOrComputeBucket(RenderBucket rendBucket) {
+        return buckets.computeIfAbsent(rendBucket, (rb -> {
+            ChunkBucket cb = new ChunkBucket(sm.getShader(rb), rb);
+            return cb;
+        }));
+    }
+
+    public String getQuadCount() {
+        return Integer.toString(
+                buckets.values().stream().filter(Objects::nonNull)
+                        .flatMap(cb -> Arrays.stream(cb.meshes))
+                        .filter(Objects::nonNull)
+                        .mapToInt(QuadMesh::getQuadCount).sum());
+    }
+
+/*
      * OVERALL STRUCTURE:
      * Each chunk is split into render buckets. Each bucket contains one or more meshes (up to 48 per bucket), with
      * 512 quads per mesh. We use 48 meshes per bucket because theoretically one bucket could contain the absolute worst-case
@@ -92,10 +290,15 @@ public class RenderedChunk implements VxlRenderable {
         }
 
         private void drop(int id) {
+            if (id == -1) {
+                Profiling.spuriousDrops++;
+                return;
+            }
             int loc = idToLocation[id];
+
             int meshId = loc / 512;
-            boolean relocationDone = meshes[meshId].dropAndRelocateLast(loc%512);
-            if(relocationDone){
+            boolean relocationDone = meshes[meshId].dropAndRelocateLast(loc % 512);
+            if (relocationDone) {
                 int relocatedLoc = meshId * 512 + meshes[meshId].quadCount;
                 int relocatedId = locationToId[relocatedLoc]; // quadCount has been decremented hence no off by one
                 idToLocation[relocatedId] = loc;
@@ -113,12 +316,12 @@ public class RenderedChunk implements VxlRenderable {
                 if (meshes[i] == null) {
                     meshes[i] = new QuadMesh(bucket.name() + "-" + i, useWeights);
                 }
-                if(meshes[i].quadCount<512){
+                if (meshes[i].quadCount < 512) {
                     int location = i * 512 + meshes[i].addQuad(quad);
                     int id = nextIdToAllocate;
                     if (idToLocation[id] != -1) {
                         id = 0;
-                        while(idToLocation[id] != -1){
+                        while (idToLocation[id] != -1) {
                             id++;
                         }
                     }
@@ -374,6 +577,16 @@ public class RenderedChunk implements VxlRenderable {
             int quadIdx = add(quad);
             posXFaces[x][y][z] = quadIdx;
         }
+
+        public void render() {
+            for(QuadMesh qm : meshes){
+                if(qm!=null && qm.getQuadCount()!=0){
+                    // FIXME casting!!!
+                    qm.update();
+                    qm.gdxMeshPart.render(((BlockNodeShader) shader).prog);
+                }
+            }
+        }
     }
 
     /**
@@ -410,7 +623,7 @@ public class RenderedChunk implements VxlRenderable {
             this.hasAnimWeight = hasAnimWeight;
             if (this.hasAnimWeight) gdxMesh = new Mesh(false, 2048, 3072,
                     new VertexAttribute(VertexAttributes.Usage.Position, 3, "a_pos"),
-                    new VertexAttribute(VertexAttributes.Usage.TextureCoordinates, 2, "a_texcoord"),
+                    new VertexAttribute(VertexAttributes.Usage.TextureCoordinates, 2, "a_texcoord0"),
                     new VertexAttribute(VertexAttributes.Usage.Generic, 1, "a_vtx_lighting"),
                     new VertexAttribute(VertexAttributes.Usage.BoneWeight, 1, "a_anim_weight"));
             else gdxMesh = new Mesh(false, 2048, 3072,
@@ -428,35 +641,42 @@ public class RenderedChunk implements VxlRenderable {
 
         // returns the position in the index buffer, where this quad got stored (using a stride of 6).
         private int addQuad(float[] quadBuf) {
-            assert (quadBuf.length == (hasAnimWeight ? 28 : 24)) : "Float buffer has wrong length: " + quadBuf.length
-                    + " for mesh " + (hasAnimWeight ? "with" : "without") + " animation weights";
-            if (quadCount >= 512) {
-                throw new RuntimeException("Not enough room in this mesh for this quad.");
-            }
-            int index = quadBitmap.nextClearBit(0);
-            assert (index < 512);
+            try {
+                assert (quadBuf.length == (hasAnimWeight ? 28 : 24)) : "Float buffer has wrong length: " + quadBuf.length
+                        + " for mesh " + (hasAnimWeight ? "with" : "without") + " animation weights";
+                if (quadCount >= 512) {
+                    throw new RuntimeException("Not enough room in this mesh for this quad.");
+                }
+                int index = quadBitmap.nextClearBit(0);
+                assert (index < 512);
 
-            maxIndex = Math.max(index, maxIndex);
-            vertices.limit(Math.max(vertices.position(), (maxIndex + 1) * (hasAnimWeight ? 28 : 24) - 1));
-            vertices.position(index);
-            vertices.put(quadBuf);
-            indices.limit(indices.limit() + 6);
-            indices.position(quadCount * 6);
-            indices.put((short) (index * 4 + 0));
-            indices.put((short) (index * 4 + 1));
-            indices.put((short) (index * 4 + 3));
-            indices.put((short) (index * 4 + 1));
-            indices.put((short) (index * 4 + 2));
-            indices.put((short) (index * 4 + 3));
-            quadCount++;
-            quadBitmap.set(index);
-            return quadCount - 1;
+                maxIndex = Math.max(index, maxIndex);
+                vertices.limit(Math.max(vertices.position(), (maxIndex + 1) * (hasAnimWeight ? 28 : 24)));
+                vertices.position(index);
+                vertices.put(quadBuf);
+                indices.limit(quadCount * 6 + 6);
+                indices.position(quadCount * 6);
+                indices.put((short) (index * 4 + 0));
+                indices.put((short) (index * 4 + 1));
+                indices.put((short) (index * 4 + 3));
+                indices.put((short) (index * 4 + 1));
+                indices.put((short) (index * 4 + 2));
+                indices.put((short) (index * 4 + 3));
+                quadCount++;
+                quadBitmap.set(index);
+                return quadCount - 1;
+            } catch(Exception e){
+                e.printStackTrace();
+                return -1;
+            }
         }
 
 
         // return value is whether a remap took place, in which case the ID arrays need to be updated so the last
         // quad is now where the dropped quad was.
         private boolean dropAndRelocateLast(int index) {
+
+            indices.limit(indices.capacity());
             int droppedFirstIndex = indices.get(index * 6);
             assert (quadBitmap.get(droppedFirstIndex / 4)) : "Expected the index being dropped to still be in the bitmap.";
             int relocatedQuadId = indices.get((quadCount - 1) * 6) / 4;
@@ -474,7 +694,7 @@ public class RenderedChunk implements VxlRenderable {
             }
             quadCount--;
             quadBitmap.clear(droppedFirstIndex / 4);
-            indices.limit(index * 6 - 1);
+            //indices.limit(index * 6 - 1);
             return relocated;
         }
 
@@ -484,7 +704,14 @@ public class RenderedChunk implements VxlRenderable {
 
     @Override
     public void render() {
-        // TODO
+        ChunkBucket opaque = buckets.get(RenderBucket.OPAQUE);
+        if(opaque!=null){
+            opaque.render();
+        }
+        ChunkBucket translucent = buckets.get(RenderBucket.TRANSPARENT_NO_CULL);
+        if(translucent!=null){
+            translucent.render();
+        }
     }
 
     @Override

@@ -89,8 +89,8 @@ public class GameRenderer implements ApplicationListener {
         cam = new PerspectiveCamera(67, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
         shaderManager = new ShaderManager();
-        cam.position.set(2f, 2f, 2f);
-        cam.lookAt(0, 0, 0);
+        cam.position.set(2f, 2f, -1f);
+        cam.lookAt(2, 2, 0);
         cam.near = 1f;
         cam.far = 300f;
         cam.update();
@@ -98,13 +98,13 @@ public class GameRenderer implements ApplicationListener {
         camController = new CameraInputController(cam);
         Gdx.input.setInputProcessor(camController);
         tex1 = new NaiveTexture("tex_1.png");
-        tex2 = new NaiveTexture("glass_ylw.png");
-        tex2a = new NaiveTexture("glass_ylw.png");
+        tex2 = new NaiveTexture("tex_2.png");
+        tex2a = new NaiveTexture("tex_2.png");
         tex3 = new NaiveTexture("tex_3.png");
         atl = new NodeTexAtlas(512, 512);
         ap1 = new BlockNodeAppearance(RenderBucket.OPAQUE, tex1, tex1, tex3, tex3, tex1, tex1);
         ap2 = new BlockNodeAppearance(RenderBucket.TRANSPARENT_NO_CULL, tex2, tex2, tex2, tex2, tex2, tex2);
-        chk = new RenderedChunk(new LoadedMapChunk(gs, 0, 0, 0, nrt), atl, shaderManager);
+        chk = new RenderedChunk(new LoadedMapChunk(gs, 0, 0, 0, nrt), shaderManager, atl);
         for (int i = 0; i < 16; i++) {
             for (int j = 0; j < 16; j++) {
                 for (int k = 0; k < 16; k++) {
@@ -117,7 +117,7 @@ public class GameRenderer implements ApplicationListener {
             }
         }
         chk.getDelegate().clearQueue();
-        chk.rebuildAll();
+        //chk.rebuildAll();
         nd1 = new BaseMapNode("test:n1", ap1);
         nd2 = new BaseMapNode("test:n2", ap2);
         atl.packBatch(tex1, tex2, tex3);
@@ -273,6 +273,7 @@ public class GameRenderer implements ApplicationListener {
         //shaderProgram.setUniformi("u_texture", 0);
         int skipped = 0;
         time += Gdx.graphics.getRawDeltaTime();
+        cam.update();
         chk.update(cam);
         shaderManager.updateAllShaders(cam, time);
 
